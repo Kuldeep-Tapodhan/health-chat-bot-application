@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, ChevronLeft, ChevronRight, MoreVertical, Shield, Ban, CheckCircle, Plus, X, Loader2, Trash2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { API_BASE_URL } from '@/lib/api-client';
 
 interface User {
     uid: string;
@@ -45,9 +46,8 @@ export default function UserTable({ refreshTrigger }: UserTableProps) {
     const fetchUsers = async () => {
         setLoading(true);
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
             const offset = page * LIMIT;
-            const res = await fetch(`${apiUrl}/admin/users?limit=${LIMIT}&offset=${offset}`);
+            const res = await fetch(`${API_BASE_URL}/admin/users?limit=${LIMIT}&offset=${offset}`);
 
             if (res.ok) {
                 const data = await res.json();
@@ -88,8 +88,7 @@ export default function UserTable({ refreshTrigger }: UserTableProps) {
         setCreateError(null);
 
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
-            const res = await fetch(`${apiUrl}/admin/users`, {
+            const res = await fetch(`${API_BASE_URL}/admin/users`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(newUser)
@@ -115,8 +114,7 @@ export default function UserTable({ refreshTrigger }: UserTableProps) {
     const handleUpdateRole = async (userId: string, newRole: string) => {
         setUpdating(userId);
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
-            const res = await fetch(`${apiUrl}/admin/users/${userId}/role`, {
+            const res = await fetch(`${API_BASE_URL}/admin/users/${userId}/role`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ role: newRole })
@@ -145,8 +143,7 @@ export default function UserTable({ refreshTrigger }: UserTableProps) {
 
         setUpdating(userId);
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
-            const res = await fetch(`${apiUrl}/admin/users/${userId}`, {
+            const res = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
                 method: 'DELETE',
             });
 

@@ -26,6 +26,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ content }) => {
 
 // Parse content to extract chart blocks and regular text
 function parseContent(content: string): Array<{ type: 'text' | 'chart'; content?: string; data?: any }> {
+    if (!content || typeof content !== 'string') return [];
     const parts: Array<{ type: 'text' | 'chart'; content?: string; data?: any }> = [];
 
     // Regex to match ```chart ... ``` or ```json ... ``` blocks
@@ -92,13 +93,13 @@ const MarkdownText: React.FC<{ text: string }> = ({ text }) => {
     return (
         <div
             className="prose prose-invert prose-sm max-w-none
-                       prose-headings:text-white prose-headings:font-semibold prose-headings:mt-4 prose-headings:mb-2
-                       prose-p:text-slate-300 prose-p:leading-relaxed
-                       prose-strong:text-white prose-strong:font-semibold
-                       prose-ul:text-slate-300 prose-ol:text-slate-300
-                       prose-li:marker:text-teal-400
-                       prose-code:text-teal-300 prose-code:bg-slate-800/50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded
-                       prose-pre:bg-slate-800/50 prose-pre:border prose-pre:border-white/10"
+                       prose-headings:text-slate-900 dark:prose-headings:text-white prose-headings:font-bold prose-headings:mt-4 prose-headings:mb-2
+                       prose-p:text-slate-700 dark:prose-p:text-slate-300 prose-p:leading-relaxed
+                       prose-strong:text-slate-900 dark:prose-strong:text-white prose-strong:font-bold
+                       prose-ul:text-slate-700 dark:prose-ul:text-slate-300 prose-ol:text-slate-700 dark:prose-ol:text-slate-300
+                       prose-li:marker:text-emerald-500
+                       prose-code:text-emerald-600 dark:prose-code:text-emerald-300 prose-code:bg-emerald-500/10 prose-code:px-2 prose-code:py-0.5 prose-code:rounded-md prose-code:border prose-code:border-emerald-500/20
+                       prose-pre:bg-slate-900/90 prose-pre:border prose-pre:border-emerald-500/20 prose-pre:rounded-xl"
             dangerouslySetInnerHTML={{ __html: parseMarkdown(text) }}
         />
     );

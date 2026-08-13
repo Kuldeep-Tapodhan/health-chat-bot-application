@@ -6,6 +6,7 @@ import datetime
 import json
 import random
 import urllib.parse
+import os
 
 from services.database import get_db_connection
 from services.auth_service import hash_password, verify_password, create_access_token, get_current_user
@@ -166,7 +167,8 @@ async def send_otp(payload: SendOTPRequest, background_tasks: BackgroundTasks):
     subject = f"Your Login Code: {otp}"
     content = f"Hello {name},\n\nYour verification code is: {otp}\n\nThis code will expire in {OTP_EXPIRY_MINUTES} minutes."
     params = {"email": email, "otp": otp, "name": name}
-    link = f"http://localhost:3000/signup?{urllib.parse.urlencode(params)}"
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    link = f"{frontend_url}/signup?{urllib.parse.urlencode(params)}"
     html_content = get_email_template(name, otp, link)
 
     background_tasks.add_task(send_email_via_smtp, email, subject, content, html_content)

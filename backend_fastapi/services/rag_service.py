@@ -10,7 +10,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 VECTOR_DB_DIR = os.path.join(BASE_DIR, "chroma_db")
 # Use Google Embeddings via API to avoid massive local Torch dependencies
-embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 
 
 def get_vectorstore():
@@ -36,10 +36,9 @@ async def ingest_document(file_path: str) -> int:
     # Add to Vector Store
     vectorstore = get_vectorstore()
     vectorstore.add_documents(chunks)
-    vectorstore.persist()
     
     return len(chunks)
 
 def get_retriever():
     vectorstore = get_vectorstore()
-    return vectorstore.as_retriever(search_kwargs={"k": 100})
+    return vectorstore.as_retriever(search_kwargs={"k": 10})

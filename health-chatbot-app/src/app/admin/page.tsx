@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { API_BASE_URL } from '@/lib/api-client';
 import {
     Users,
     LayoutDashboard,
@@ -117,8 +118,7 @@ export default function AdminDashboard() {
 
     const fetchDocuments = async () => {
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
-            const response = await fetch(`${apiUrl}/ingest/files`);
+            const response = await fetch(`${API_BASE_URL}/ingest/files`);
             if (response.ok) {
                 const data = await response.json();
                 setDocuments(data);
@@ -130,18 +130,17 @@ export default function AdminDashboard() {
 
     const fetchDashboardData = async () => {
         setDashboardLoading(true);
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
         try {
             const [statsRes, activityRes, growthRes, usageRes, keywordsRes, usersRes, heatmapRes, insightsRes, effectRes] = await Promise.all([
-                fetch(`${apiUrl}/admin/stats`),
-                fetch(`${apiUrl}/admin/activity?limit=50`),
-                fetch(`${apiUrl}/admin/users/growth`),
-                fetch(`${apiUrl}/admin/analytics/usage`),
-                fetch(`${apiUrl}/admin/analytics/keywords`),
-                fetch(`${apiUrl}/admin/analytics/users`),
-                fetch(`${apiUrl}/admin/analytics/heatmap`),
-                fetch(`${apiUrl}/admin/analytics/insights`),
-                fetch(`${apiUrl}/admin/analytics/effectiveness`)
+                fetch(`${API_BASE_URL}/admin/stats`),
+                fetch(`${API_BASE_URL}/admin/activity?limit=50`),
+                fetch(`${API_BASE_URL}/admin/users/growth`),
+                fetch(`${API_BASE_URL}/admin/analytics/usage`),
+                fetch(`${API_BASE_URL}/admin/analytics/keywords`),
+                fetch(`${API_BASE_URL}/admin/analytics/users`),
+                fetch(`${API_BASE_URL}/admin/analytics/heatmap`),
+                fetch(`${API_BASE_URL}/admin/analytics/insights`),
+                fetch(`${API_BASE_URL}/admin/analytics/effectiveness`)
             ]);
 
             if (statsRes.ok) setStats(await statsRes.json());
@@ -193,9 +192,8 @@ export default function AdminDashboard() {
             formData.append('files', file);
         });
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
         try {
-            const response = await fetch(`${apiUrl}/ingest/upload`, {
+            const response = await fetch(`${API_BASE_URL}/ingest/upload`, {
                 method: 'POST',
                 body: formData,
             });
@@ -214,9 +212,8 @@ export default function AdminDashboard() {
 
     const handleDelete = async (filename: string) => {
         if (!confirm(`Are you sure you want to delete ${filename}?`)) return;
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
         try {
-            const response = await fetch(`${apiUrl}/ingest/files/${filename}`, {
+            const response = await fetch(`${API_BASE_URL}/ingest/files/${filename}`, {
                 method: 'DELETE',
             });
             if (response.ok) fetchDocuments();

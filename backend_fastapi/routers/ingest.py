@@ -25,13 +25,14 @@ async def upload_document(files: List[UploadFile] = File(...)):
     results = []
     
     for file in files:
-        file_extension = file.filename.split(".")[-1].lower()
+        safe_filename = os.path.basename(file.filename)
+        file_extension = safe_filename.split(".")[-1].lower() if "." in safe_filename else ""
         
         if file_extension not in ["pdf", "txt", "csv"]:
-            results.append({"filename": file.filename, "status": "skipped", "reason": "Unsupported file type"})
+            results.append({"filename": safe_filename, "status": "skipped", "reason": "Unsupported file type"})
             continue
 
-        file_path = os.path.join(UPLOAD_DIR, file.filename)
+        file_path = os.path.join(UPLOAD_DIR, safe_filename)
         
         try:
             # Save file locally

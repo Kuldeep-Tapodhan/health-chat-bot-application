@@ -33,35 +33,35 @@ export default function LandingPage() {
     <div className="min-h-screen bg-gradient-medical bg-grid-pattern relative overflow-hidden">
       {/* Animated Background Blobs */}
       <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-teal-400/20 dark:bg-teal-500/10 rounded-full blur-3xl animate-blob" />
-        <div className="absolute top-1/3 -left-40 w-[400px] h-[400px] bg-blue-400/20 dark:bg-blue-500/10 rounded-full blur-3xl animate-blob animation-delay-2000" />
-        <div className="absolute -bottom-40 left-1/2 w-[450px] h-[450px] bg-cyan-400/15 dark:bg-cyan-500/10 rounded-full blur-3xl animate-blob animation-delay-4000" />
+        <div className="absolute -top-40 -right-40 w-[500px] h-[500px] bg-emerald-500/20 dark:bg-emerald-500/10 rounded-full blur-3xl animate-blob" />
+        <div className="absolute top-1/3 -left-40 w-[400px] h-[400px] bg-indigo-500/20 dark:bg-indigo-500/10 rounded-full blur-3xl animate-blob animation-delay-2000" />
+        <div className="absolute -bottom-40 left-1/2 w-[450px] h-[450px] bg-teal-500/15 dark:bg-teal-500/10 rounded-full blur-3xl animate-blob animation-delay-4000" />
       </div>
 
       {/* Navigation - Glassmorphism */}
       <nav className="fixed top-0 left-0 right-0 z-50">
         <div className="mx-4 mt-4">
-          <div className="max-w-7xl mx-auto glass rounded-2xl px-6 py-4 flex items-center justify-between transition-all duration-300 hover:shadow-lg hover:shadow-teal-500/10">
+          <div className="max-w-7xl mx-auto glass rounded-2xl px-6 py-4 flex items-center justify-between transition-all duration-300 hover:shadow-lg hover:shadow-emerald-500/10">
             <Link href="/" className="flex items-center gap-3 group">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-600 to-teal-500 flex items-center justify-center text-white shadow-lg shadow-teal-500/30 group-hover:shadow-teal-500/50 transition-all duration-500 group-hover:scale-110">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-emerald-500/30 group-hover:shadow-emerald-500/50 transition-all duration-500 group-hover:scale-110">
                 <Activity className="w-5 h-5" />
               </div>
-              <span className="font-bold text-xl text-slate-800 dark:text-white tracking-tight group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors">Health AI</span>
+              <span className="font-bold text-xl text-slate-800 dark:text-white tracking-tight group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">Health AI</span>
             </Link>
 
             <div className="hidden md:flex items-center gap-10">
-              <Link href="#features" className="text-[15px] font-medium text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-300">Features</Link>
-              <Link href="#how-it-works" className="text-[15px] font-medium text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-300">How it works</Link>
+              <Link href="#features" className="text-[15px] font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors duration-300">Features</Link>
+              <Link href="#how-it-works" className="text-[15px] font-medium text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors duration-300">How it works</Link>
             </div>
 
             <div className="flex items-center gap-4">
               <div className="border-r border-slate-200 dark:border-slate-700 pr-4 mr-2 hidden sm:block">
                 <ThemeToggle compact={true} />
               </div>
-              <Link href="/login" className="hidden sm:block text-[15px] font-semibold text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 transition-colors duration-300 px-2 whitespace-nowrap">
+              <Link href="/login" className="hidden sm:block text-[15px] font-semibold text-slate-600 dark:text-slate-300 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors duration-300 px-2 whitespace-nowrap">
                 Sign in
               </Link>
-              <Link href="/signup" className="btn-primary text-sm py-2.5 px-6 shadow-lg shadow-teal-500/25 hover:shadow-teal-500/40">
+              <Link href="/signup" className="btn-primary text-sm py-2.5 px-6 shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40">
                 Get Started
               </Link>
             </div>
@@ -74,7 +74,7 @@ export default function LandingPage() {
         <div className="max-w-5xl mx-auto text-center">
           {/* Badge */}
           <div className="animate-fade-in-up inline-flex items-center gap-2 px-4 py-2 rounded-full glass mb-8">
-            <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse" />
+            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
             <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Powered by Advanced AI</span>
             <Sparkles className="w-4 h-4 text-amber-500" />
           </div>
@@ -83,7 +83,7 @@ export default function LandingPage() {
           <h1 className="animate-fade-in-up animation-delay-100 text-5xl md:text-7xl font-bold tracking-tight leading-[1.1] mb-6">
             <span className="text-slate-900 dark:text-white">Your Personal</span>
             <br />
-            <span className="bg-gradient-to-r from-teal-600 via-teal-500 to-cyan-500 bg-clip-text text-transparent">
+            <span className="bg-gradient-to-r from-emerald-500 via-teal-500 to-indigo-600 bg-clip-text text-transparent">
               Health Assistant
             </span>
           </h1>

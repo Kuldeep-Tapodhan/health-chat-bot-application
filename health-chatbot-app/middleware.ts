@@ -24,10 +24,8 @@ export function middleware(request: NextRequest) {
     // Check if the path is protected
     const isProtected = protectedPaths.some(path => pathname.startsWith(path));
 
-    // Get the session cookie (Firebase Auth cookie)
-    // Note: In a real app, we'd verify this token, but for middleware speed
-    // we just check for existence. Client-side auth will verify validity.
-    const hasSession = request.cookies.has('session');
+    // Get the auth token — stored as 'token' cookie (set alongside localStorage)
+    const hasSession = request.cookies.has('token');
 
     // Redirect to login if accessing protected route without session
     if (isProtected && !hasSession) {

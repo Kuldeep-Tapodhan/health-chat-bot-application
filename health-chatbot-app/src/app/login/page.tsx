@@ -63,13 +63,13 @@ export default function LoginPage() {
                 </div>
 
                 {/* Card */}
-                <div className="animate-fade-in-up animation-delay-100 glass-card rounded-3xl p-8 md:p-10">
+                <div className="animate-fade-in-up animation-delay-100 glass-card rounded-3xl p-8 md:p-10 border border-slate-200/80 dark:border-white/10 shadow-2xl bg-white/90 dark:bg-[#0B1120]/90 backdrop-blur-2xl">
                     {/* Header */}
                     <div className="text-center mb-8">
-                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">
+                        <h1 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">
                             Welcome back
                         </h1>
-                        <p className="text-slate-500 dark:text-slate-400">
+                        <p className="text-slate-600 dark:text-slate-400 text-sm font-medium">
                             Enter your credentials to access your workspace.
                         </p>
                     </div>
@@ -85,16 +85,16 @@ export default function LoginPage() {
                     <form onSubmit={handleLogin} className="space-y-5">
                         {/* Email Field */}
                         <div className="space-y-2">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Email</label>
-                            <div className={`relative transition-all duration-300 ${focusedField === 'email' ? 'scale-[1.02]' : ''}`}>
-                                <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${focusedField === 'email' ? 'text-teal-600' : 'text-slate-400'}`} />
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Email</label>
+                            <div className={`relative transition-all duration-300 ${focusedField === 'email' ? 'scale-[1.01]' : ''}`}>
+                                <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 z-10 pointer-events-none transition-colors duration-300 ${focusedField === 'email' ? 'text-emerald-500' : 'text-slate-400'}`} />
                                 <input
                                     type="email"
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     onFocus={() => setFocusedField('email')}
                                     onBlur={() => setFocusedField(null)}
-                                    className="input-field"
+                                    className="input-field !pl-12"
                                     placeholder="name@example.com"
                                     required
                                 />
@@ -103,16 +103,16 @@ export default function LoginPage() {
 
                         {/* Password Field */}
                         <div className="space-y-2">
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Password</label>
-                            <div className={`relative transition-all duration-300 ${focusedField === 'password' ? 'scale-[1.02]' : ''}`}>
-                                <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${focusedField === 'password' ? 'text-teal-600' : 'text-slate-400'}`} />
+                            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Password</label>
+                            <div className={`relative transition-all duration-300 ${focusedField === 'password' ? 'scale-[1.01]' : ''}`}>
+                                <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 z-10 pointer-events-none transition-colors duration-300 ${focusedField === 'password' ? 'text-emerald-500' : 'text-slate-400'}`} />
                                 <input
                                     type="password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     onFocus={() => setFocusedField('password')}
                                     onBlur={() => setFocusedField(null)}
-                                    className="input-field"
+                                    className="input-field !pl-12"
                                     placeholder="••••••••"
                                     required
                                 />
@@ -123,13 +123,13 @@ export default function LoginPage() {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full btn-primary flex items-center justify-center gap-2 group"
+                            className="w-full btn-gradient-primary py-3.5 rounded-xl font-bold flex items-center justify-center gap-2 group shadow-lg shadow-emerald-500/25 active:scale-95 transition-all mt-2"
                         >
                             {loading ? (
                                 <Loader2 className="w-5 h-5 animate-spin" />
                             ) : (
                                 <>
-                                    Sign In
+                                    <span>Sign In</span>
                                     <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
                                 </>
                             )}

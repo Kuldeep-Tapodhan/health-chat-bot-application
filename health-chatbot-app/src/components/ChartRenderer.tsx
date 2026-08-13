@@ -37,15 +37,13 @@ interface ChartRendererProps {
 const COLORS = ['#14b8a6', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#22c55e', '#06b6d4', '#ec4899'];
 
 const ChartRenderer: React.FC<ChartRendererProps> = ({ data }) => {
-    // Transform Chart.js style data (labels + datasets) to Recharts style (array of objects)
-    // The backend uses a "Chart.js" like structure, but this component uses Recharts.
-    let chartData = data.data;
+    let chartData = data?.data || [];
 
     // Check if data is in the "old" format (from backend prompt)
-    if ((data as any).labels && (data as any).datasets) {
+    if ((data as any)?.labels && (data as any)?.datasets && Array.isArray((data as any).datasets) && (data as any).datasets.length > 0) {
         const labels = (data as any).labels;
         const dataset = (data as any).datasets[0];
-        if (labels && dataset && dataset.data) {
+        if (labels && dataset && Array.isArray(dataset.data)) {
             chartData = labels.map((label: string, index: number) => ({
                 name: label,
                 value: dataset.data[index]
@@ -53,7 +51,7 @@ const ChartRenderer: React.FC<ChartRendererProps> = ({ data }) => {
         }
     }
 
-    if (!chartData || chartData.length === 0) return null;
+    if (!Array.isArray(chartData) || chartData.length === 0) return null;
 
     const renderChart = () => {
         // Use chartData instead of data.data
@@ -161,8 +159,8 @@ const ChartRenderer: React.FC<ChartRendererProps> = ({ data }) => {
             {data.title && (
                 <h3 className="text-sm font-semibold text-white mb-3 text-center">{data.title}</h3>
             )}
-            <div className="h-64">
-                <ResponsiveContainer width="100%" height="100%">
+            <div className="h-64 min-w-0">
+                <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={100}>
                     {renderChart()}
                 </ResponsiveContainer>
             </div>

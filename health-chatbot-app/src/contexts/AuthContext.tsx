@@ -5,6 +5,16 @@ import { User } from '@/types';
 import { useRouter } from 'next/navigation';
 import { apiClient } from '@/lib/api-client';
 
+// Helper: write/delete the 'token' cookie that middleware reads.
+// Must be SameSite=Lax (not HttpOnly) so JS can set it.
+function setAuthCookie(token: string) {
+    const maxAge = 7 * 24 * 60 * 60; // 7 days, same as JWT expiry
+    document.cookie = `token=${token}; path=/; max-age=${maxAge}; SameSite=Lax`;
+}
+function clearAuthCookie() {
+    document.cookie = 'token=; path=/; max-age=0; SameSite=Lax';
+}
+
 interface AuthContextType {
     user: User | null;
     loading: boolean;
@@ -74,13 +84,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                             totalReports: 0,
                         },
                     });
+                    // Ensure cookie stays in sync with localStorage
+                    setAuthCookie(token);
                 } else {
                     localStorage.removeItem('token');
+                    clearAuthCookie();
                     setUser(null);
                 }
             } catch (error) {
                 console.error("Session load error:", error);
                 localStorage.removeItem('token');
+                clearAuthCookie();
                 setUser(null);
             } finally {
                 setLoading(false);
@@ -95,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const res = await apiClient.login(email, password);
             if (res.token) {
                 localStorage.setItem('token', res.token);
+                setAuthCookie(res.token);  // <-- middleware reads this
                 const u = res.user;
                 setUser({
                     uid: u.id,
@@ -137,6 +152,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const res = await apiClient.signup(email, password, name);
             if (res.token) {
                 localStorage.setItem('token', res.token);
+                setAuthCookie(res.token);  // <-- middleware reads this
                 const u = res.user;
                 setUser({
                     uid: u.id,
@@ -169,6 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const logout = () => {
         localStorage.removeItem('token');
+        clearAuthCookie();  // <-- remove cookie so middleware allows /login
         setUser(null);
         router.push('/login');
     };

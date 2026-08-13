@@ -57,9 +57,11 @@ const config: Config = {
             backgroundImage: {
                 "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",
                 "gradient-conic": "conic-gradient(from 180deg at 50% 50%, var(--tw-gradient-stops))",
-                "gradient-accent": "linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%)",
-                "gradient-dark": "linear-gradient(180deg, #000000 0%, #0a0a0a 100%)",
-                "glow-conic": "conic-gradient(from 180deg at 50% 50%, #60a5fa33 0deg, #a78bfa33 180deg, #60a5fa33 360deg)",
+                "gradient-accent": "linear-gradient(135deg, #10b981 0%, #6366f1 100%)",
+                "gradient-emerald": "linear-gradient(135deg, #059669 0%, #10b981 100%)",
+                "gradient-indigo": "linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)",
+                "gradient-dark": "linear-gradient(180deg, #0b0f19 0%, #111827 100%)",
+                "glow-conic": "conic-gradient(from 180deg at 50% 50%, #10b98133 0deg, #6366f133 180deg, #10b98133 360deg)",
             },
             animation: {
                 'fade-in': 'fadeIn 0.5s ease-out',

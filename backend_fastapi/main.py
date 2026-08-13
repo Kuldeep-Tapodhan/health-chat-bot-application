@@ -13,18 +13,11 @@ from services.auth_service import hash_password
 
 app = FastAPI(title="Data-Aware RAG System API")
 
-# CORS Configuration
-origins = [
-    "http://localhost:3000",  # Next.js frontend
-    "http://127.0.0.1:3000",
-    "http://localhost:8000",
-    "*"
-]
-
+# CORS Configuration — allow all origins permissively
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

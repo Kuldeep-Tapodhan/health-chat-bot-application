@@ -10,8 +10,8 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 if GOOGLE_API_KEY:
     genai.configure(api_key=GOOGLE_API_KEY)
 
-# Use gemini-1.5-flash for translation as it is fast
-TRANSLATE_MODEL = "gemini-1.5-flash"
+# Use GEMINI_MODEL for translation
+TRANSLATE_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 @router.post("/")
 async def translate_text(

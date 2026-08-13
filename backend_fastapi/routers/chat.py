@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from services.rag_service import get_retriever
@@ -26,16 +27,50 @@ class ChatResponse(BaseModel):
     message: str
     chart_data: dict = None
 
-# Initialize LLM
+class StreamRequest(BaseModel):
+    message: str
+    history: list[dict] = []
+
+MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
+
 # Initialize LLM
 llm = ChatGoogleGenerativeAI(
     api_key=os.getenv("GOOGLE_API_KEY"),
-    model="gemini-1.5-pro",
+    model=MODEL_NAME,
     temperature=0
 )
 
 # Global Cache for DataFrames
 DF_CACHE = {}
+
+@router.post("/stream")
+async def chat_stream(request: StreamRequest):
+    async def generate():
+        try:
+            from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+
+            messages_to_send = [
+                SystemMessage(content="You are an expert AI Health Assistant. Provide accurate, empathetic, and clear medical advice and health guidance. Always maintain context of the ongoing user conversation.")
+            ]
+
+            for item in request.history:
+                role = item.get("role") or item.get("sender")
+                content = item.get("content") or item.get("text") or item.get("message")
+                if role and content:
+                    if role in ["user", "human"]:
+                        messages_to_send.append(HumanMessage(content=content))
+                    elif role in ["assistant", "bot", "ai"]:
+                        messages_to_send.append(AIMessage(content=content))
+
+            messages_to_send.append(HumanMessage(content=request.message))
+
+            async for chunk in llm.astream(messages_to_send):
+                if hasattr(chunk, "content") and chunk.content:
+                    yield chunk.content
+        except Exception as e:
+            yield f"Error generating response: {str(e)}"
+
+    return StreamingResponse(generate(), media_type="text/plain")
 
 @router.post("/query", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
@@ -205,7 +240,7 @@ async def chat_endpoint(request: ChatRequest):
         You are a data analysis agent specialized in HEALTH and MEDICAL data. 
         
         RESTRICT YOUR DOMAIN:
-        1. You are a **Regional Health Assistant**.
+        1. You are a **Health AI Assistant**.
         2. You SHOULD answer questions related to health, diseases, medical data, hospital locations, and outbreaks.
         3. If the answer is in the provided dataset, use it. If not, use your general medical knowledge.
         4. **CRITICAL:** If the user asks about a clearly NON-MEDICAL topic (e.g., "what is love", "describe a bike", "jokes", "coding", "movies"), you MUST reply with: "I am a health assistant and can only help with medical or health-related queries." and STOP.
@@ -454,10 +489,12 @@ def find_nearby_hospitals(df, location_query, distance_km):
     a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-a))
     
-    df['distance'] = R * c
+    # Make a copy before modifying to avoid mutating the cached DataFrame
+    df_copy = df.copy()
+    df_copy['distance'] = R * c
     
     # 3. Filter and Sort
-    nearby_df = df[df['distance'] <= distance_km].copy()
+    nearby_df = df_copy[df_copy['distance'] <= distance_km].copy()
     nearby_df = nearby_df.sort_values('distance')
     
     # Round distance to 2 decimal places
@@ -488,9 +525,22 @@ class ChatSessionUpdate(BaseModel):
 @router.get("/sessions")
 def get_chat_sessions(current_user: dict = Depends(get_current_user)):
     conn = get_db_connection()
-    sessions = conn.execute("SELECT id, title, created_at FROM ai_chats WHERE user_id = ? ORDER BY created_at DESC", (current_user["id"],)).fetchall()
+    sessions = conn.execute("SELECT id, title, messages, created_at FROM ai_chats WHERE user_id = ? ORDER BY created_at DESC", (current_user["id"],)).fetchall()
     conn.close()
-    return {"success": True, "sessions": [dict(s) for s in sessions]}
+    
+    session_list = []
+    for s in sessions:
+        s_dict = dict(s)
+        if isinstance(s_dict.get("messages"), str):
+            try:
+                s_dict["messages"] = json.loads(s_dict["messages"])
+            except Exception:
+                s_dict["messages"] = []
+        elif s_dict.get("messages") is None:
+            s_dict["messages"] = []
+        session_list.append(s_dict)
+        
+    return {"success": True, "sessions": session_list}
 
 @router.post("/sessions")
 def create_chat_session(payload: ChatSessionCreate, current_user: dict = Depends(get_current_user)):
@@ -514,7 +564,13 @@ def get_chat_session(session_id: str, current_user: dict = Depends(get_current_u
         raise HTTPException(status_code=404, detail="Session not found")
     
     s_dict = dict(session)
-    s_dict["messages"] = json.loads(s_dict["messages"])
+    if isinstance(s_dict.get("messages"), str):
+        try:
+            s_dict["messages"] = json.loads(s_dict["messages"])
+        except Exception:
+            s_dict["messages"] = []
+    elif s_dict.get("messages") is None:
+        s_dict["messages"] = []
     return {"success": True, "session": s_dict}
 
 @router.put("/sessions/{session_id}")
@@ -526,7 +582,13 @@ def update_chat_session(session_id: str, payload: ChatSessionUpdate, current_use
         raise HTTPException(status_code=404, detail="Session not found")
     
     title = payload.title if payload.title is not None else session["title"]
-    messages = json.dumps(payload.messages) if payload.messages is not None else session["messages"]
+    if payload.messages is not None:
+        if isinstance(payload.messages, str):
+            messages = payload.messages
+        else:
+            messages = json.dumps(payload.messages)
+    else:
+        messages = session["messages"]
     
     conn.execute("UPDATE ai_chats SET title = ?, messages = ? WHERE id = ?", (title, messages, session_id))
     conn.commit()

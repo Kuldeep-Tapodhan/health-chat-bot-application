@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, API_BASE_URL } from '@/lib/api-client';
 import Sidebar from '@/components/Sidebar';
 import { Send, Bot, User, Sparkles, Plus, Trash2, MessageSquare, Mic, Square, Volume2, Globe, ChevronDown, Check, Clock, Stethoscope, Heart, Brain } from 'lucide-react';
 import MessageRenderer from '@/components/MessageRenderer';
@@ -102,13 +102,25 @@ export default function ChatPage() {
                 
                 if (response.success && response.sessions) {
                     // API returns sessions in {id, title, messages, ...}
-                    const loadedSessions = response.sessions.map((doc: any) => ({
-                        $id: doc.id || doc.session_id || doc.$id, // Adjust based on actual backend field
-                        title: doc.title,
-                        messages: typeof doc.messages === 'string' ? JSON.parse(doc.messages) : doc.messages,
-                        userId: doc.user_id || doc.userId,
-                        createdAt: doc.created_at || doc.createdAt
-                    }));
+                    const loadedSessions = response.sessions.map((doc: any) => {
+                        let parsedMessages = [];
+                        if (typeof doc.messages === 'string') {
+                            try {
+                                parsedMessages = JSON.parse(doc.messages) || [];
+                            } catch (e) {
+                                parsedMessages = [];
+                            }
+                        } else if (Array.isArray(doc.messages)) {
+                            parsedMessages = doc.messages;
+                        }
+                        return {
+                            $id: doc.id || doc.session_id || doc.$id,
+                            title: doc.title || 'New Chat',
+                            messages: Array.isArray(parsedMessages) ? parsedMessages : [],
+                            userId: doc.user_id || doc.userId,
+                            createdAt: doc.created_at || doc.createdAt
+                        };
+                    });
 
                     setSessions(loadedSessions);
 
@@ -122,7 +134,7 @@ export default function ChatPage() {
                 }
             } catch (err: any) {
                 console.error("Failed to load sessions from API", err);
-                if (sessions.length === 0) createNewSession();
+                if (!sessions || sessions.length === 0) createNewSession();
             }
         };
         fetchSessions();
@@ -154,8 +166,8 @@ export default function ChatPage() {
             return;
         }
 
-        const currentSession = sessions.find(s => s.$id === currentSessionId);
-        if (currentSession && currentSession.messages.length > 0) {
+        const currentSession = (sessions || []).find(s => s.$id === currentSessionId);
+        if (currentSession && Array.isArray(currentSession.messages) && currentSession.messages.length > 0) {
             translateAllMessages(currentSession.messages);
         }
     }, [currentSessionId, chatLanguage]);
@@ -165,8 +177,7 @@ export default function ChatPage() {
         const textsToTranslate = messages.map(m => m.content);
 
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
-            const response = await fetch(`${apiUrl}/translate`, {
+            const response = await fetch(`${API_BASE_URL}/translate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ texts: textsToTranslate, target_lang: chatLanguage.split('-')[0] })
@@ -277,10 +288,8 @@ export default function ChatPage() {
         formData.append('file', audioBlob, 'recording.webm');
         formData.append('language', chatLanguage);
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
-
         try {
-            const response = await fetch(`${apiUrl}/speech/stt`, {
+            const response = await fetch(`${API_BASE_URL}/speech/stt`, {
                 method: 'POST',
                 body: formData,
             });
@@ -304,10 +313,9 @@ export default function ChatPage() {
             return;
         }
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
         try {
             setPlayingMessageIndex(index);
-            const response = await fetch(`${apiUrl}/speech/tts`, {
+            const response = await fetch(`${API_BASE_URL}/speech/tts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text, language: chatLanguage }),
@@ -339,15 +347,16 @@ export default function ChatPage() {
         setError(null);
 
         // Get current session snapshot
-        const currentSession = sessions.find(s => s.$id === currentSessionId);
+        const currentSession = (sessions || []).find(s => s.$id === currentSessionId);
         if (!currentSession) return;
 
         // 1. Add User Message Locally
         const userMessage: Message = { role: 'user', content: userMessageContent, timestamp: Date.now() };
-        let currentMessages = [...currentSession.messages, userMessage];
+        const initialMessages = Array.isArray(currentSession.messages) ? currentSession.messages : [];
+        let currentMessages = [...initialMessages, userMessage];
 
         // Optimistic UI Update
-        setSessions(prev => prev.map(s =>
+        setSessions(prev => (prev || []).map(s =>
             s.$id === currentSessionId ? { ...s, messages: currentMessages } : s
         ));
 
@@ -364,16 +373,24 @@ export default function ChatPage() {
             console.error("Failed to sync user message", error);
         }
 
-        // Call Lightning AI
-        const lightningApiUrl = process.env.NEXT_PUBLIC_LIGHTNING_API_URL;
+        // Pass previous history to backend stream API
+        const historyForAi = initialMessages.map((m: Message) => ({
+            role: m.role,
+            content: m.content
+        }));
 
+        // Call Gemini via Backend API
         try {
-            if (!lightningApiUrl) throw new Error('Lightning AI URL not configured');
-
-            const response = await fetch(`${lightningApiUrl}/api/chat/stream`, {
+            const response = await fetch(`${API_BASE_URL}/chat/stream`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: userMessageContent }),
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...(typeof window !== 'undefined' && localStorage.getItem('token') ? { 'Authorization': `Bearer ${localStorage.getItem('token')}` } : {})
+                },
+                body: JSON.stringify({ 
+                    message: userMessageContent,
+                    history: historyForAi
+                }),
             });
 
             if (!response.ok) throw new Error(`AI Error: ${response.status}`);
@@ -414,8 +431,8 @@ export default function ChatPage() {
             const errorMessageContent = `Error: ${error.message || 'Could not connect to AI'}`;
             const errorMessage: Message = { role: 'assistant', content: errorMessageContent, timestamp: Date.now() };
 
-            setSessions(prev => prev.map(s =>
-                s.$id === currentSessionId ? { ...s, messages: [...s.messages, errorMessage] } : s
+            setSessions(prev => (prev || []).map(s =>
+                s.$id === currentSessionId ? { ...s, messages: [...(Array.isArray(s.messages) ? s.messages : []), errorMessage] } : s
             ));
             toast.error(error.message || 'Could not connect to AI');
         } finally {
@@ -426,8 +443,7 @@ export default function ChatPage() {
     // Helper to translate single message and update state
     const translateMessage = async (text: string, index: number) => {
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
-            const response = await fetch(`${apiUrl}/translate`, {
+            const response = await fetch(`${API_BASE_URL}/translate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ texts: [text], target_lang: chatLanguage.split('-')[0] })
@@ -505,40 +521,44 @@ export default function ChatPage() {
     );
 
     return (
-        <div className="min-h-screen bg-slate-50 dark:bg-[#080c14] flex transition-colors duration-500">
+        <div className="min-h-screen bg-slate-50 dark:bg-[#030712] flex transition-colors duration-500">
             <Sidebar />
 
-            <main className="lg:pl-64 flex-1 flex h-screen bg-grid-pattern">
+            <main className="lg:pl-64 flex-1 flex h-screen bg-grid-pattern overflow-hidden">
                 {/* Left: Chat Sessions List */}
-                <div className="w-72 border-r border-slate-200 dark:border-white/5 bg-slate-50/50 dark:bg-[#111827]/50 backdrop-blur-xl hidden xl:flex flex-col">
-                    <div className="p-4 border-b border-slate-200 dark:border-white/5 flex items-center justify-between">
-                        <h2 className="font-bold text-slate-800 dark:text-white tracking-tight">{t('chat.sidebar_title')}</h2>
+                <div className="w-72 border-r border-slate-200/80 dark:border-white/10 bg-slate-50/80 dark:bg-[#060d1b]/80 backdrop-blur-2xl hidden xl:flex flex-col">
+                    <div className="p-4 border-b border-slate-200/80 dark:border-white/10 flex items-center justify-between">
+                        <h2 className="font-bold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+                            <MessageSquare className="w-4 h-4 text-emerald-500" />
+                            {t('chat.sidebar_title')}
+                        </h2>
                         <button
                             onClick={createNewSession}
-                            className="p-2 bg-gradient-to-r from-teal-500 to-electric-blue text-white rounded-lg hover:opacity-90 transition-colors shadow-lg shadow-teal-500/20"
+                            className="p-2 bg-gradient-to-r from-emerald-500 to-indigo-600 text-white rounded-xl hover:opacity-90 transition-all shadow-md shadow-emerald-500/25 active:scale-95"
+                            title={t('chat.new_chat')}
                         >
                             <Plus className="w-4 h-4" />
                         </button>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-3 space-y-1">
+                    <div className="flex-1 overflow-y-auto p-3 space-y-1.5">
                         {sessions.map(session => (
                             <div
                                 key={session.$id}
                                 onClick={() => setCurrentSessionId(session.$id)}
                                 className={`
-                                    group flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all
+                                    group flex items-center justify-between p-3.5 rounded-xl cursor-pointer transition-all duration-200
                                     ${currentSessionId === session.$id
-                                        ? 'bg-gradient-to-r from-teal-500/10 to-blue-500/5 text-slate-900 dark:text-white border border-teal-500/20'
-                                        : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}
+                                        ? 'bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-indigo-500/15 text-slate-900 dark:text-white border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.12)] font-semibold'
+                                        : 'hover:bg-slate-100 dark:hover:bg-white/5 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-transparent'}
                                 `}
                             >
                                 <div className="flex items-center gap-3 overflow-hidden">
-                                    <MessageSquare className={`w-4 h-4 flex-shrink-0 ${currentSessionId === session.$id ? 'text-teal-600 dark:text-teal-400' : 'text-slate-400 dark:text-slate-500'}`} />
+                                    <MessageSquare className={`w-4 h-4 flex-shrink-0 ${currentSessionId === session.$id ? 'text-emerald-500 dark:text-emerald-400' : 'text-slate-400 dark:text-slate-500'}`} />
                                     <span className="truncate text-sm font-medium">{session.title}</span>
                                 </div>
                                 <button
                                     onClick={(e) => deleteSession(e, session.$id)}
-                                    className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 transition-all"
+                                    className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-red-500 transition-all rounded-lg hover:bg-slate-200 dark:hover:bg-white/10"
                                 >
                                     <Trash2 className="w-3.5 h-3.5" />
                                 </button>
@@ -548,16 +568,19 @@ export default function ChatPage() {
                 </div>
 
                 {/* Right: Active Chat */}
-                <div className="flex-1 flex flex-col">
+                <div className="flex-1 flex flex-col min-w-0">
                     {/* Header */}
-                    <header className="px-6 py-4 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-xl border-b border-slate-200 dark:border-white/5 flex items-center justify-between sticky top-0 z-10">
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500 to-electric-blue flex items-center justify-center shadow-lg shadow-teal-500/20">
+                    <header className="px-6 py-4 bg-white/90 dark:bg-[#030712]/90 backdrop-blur-2xl border-b border-slate-200/80 dark:border-white/10 flex items-center justify-between sticky top-0 z-10">
+                        <div className="flex items-center gap-3.5">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-emerald-500/30 ring-2 ring-emerald-500/20">
                                 <Bot className="w-5 h-5 text-white" />
                             </div>
                             <div>
-                                <h1 className="font-semibold text-slate-900 dark:text-white">{currentSession?.title || t('chat.header.title')}</h1>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">{t('chat.header.subtitle')}</p>
+                                <h1 className="font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
+                                    {currentSession?.title || t('chat.header.title')}
+                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
+                                </h1>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{t('chat.header.subtitle')}</p>
                             </div>
                         </div>
 
@@ -570,37 +593,42 @@ export default function ChatPage() {
                     <div className="flex-1 overflow-y-auto p-6 space-y-6">
                         {/* Errors now shown via toast notifications */}
 
-                        {(!currentSession || currentSession.messages.length === 0) ? (
-                            <div className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto">
-                                <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-teal-500 to-electric-blue flex items-center justify-center mb-6 shadow-lg shadow-teal-500/25 animate-float">
-                                    <Sparkles className="w-10 h-10 text-white" />
+                        {(!currentSession || !Array.isArray(currentSession.messages) || currentSession.messages.length === 0) ? (
+                            <div className="h-full flex flex-col items-center justify-center text-center max-w-lg mx-auto py-10">
+                                <div className="w-24 h-24 rounded-3xl bg-gradient-to-br from-emerald-500 via-teal-500 to-indigo-600 flex items-center justify-center mb-6 shadow-2xl shadow-emerald-500/30 animate-float ring-4 ring-emerald-500/20">
+                                    <Sparkles className="w-12 h-12 text-white" />
                                 </div>
-                                <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t('chat.welcome.title')}</h2>
-                                <p className="text-slate-500 dark:text-slate-400 mb-8">{t('chat.welcome.subtitle')}</p>
+                                <h2 className="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-3">
+                                    {t('chat.welcome.title')}
+                                </h2>
+                                <p className="text-slate-600 dark:text-slate-400 mb-8 leading-relaxed text-base">
+                                    {t('chat.welcome.subtitle')}
+                                </p>
 
-                                <div className="flex flex-wrap justify-center gap-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 w-full">
                                     {promptSuggestions.map((prompt, idx) => (
                                         <button
                                             key={idx}
                                             onClick={() => setInput(prompt)}
-                                            className="px-4 py-2.5 glass-card text-sm text-slate-600 dark:text-slate-300 hover:text-teal-600 dark:hover:text-teal-400 hover:border-teal-500/30 transition-all duration-300"
+                                            className="px-4 py-3.5 glass-card text-sm text-slate-700 dark:text-slate-200 hover:text-emerald-600 dark:hover:text-emerald-300 border-emerald-500/20 hover:border-emerald-500/50 hover:shadow-lg hover:shadow-emerald-500/15 hover:scale-[1.02] transition-all duration-300 font-medium text-left flex items-start justify-between"
                                         >
-                                            {prompt}
+                                            <span>{prompt}</span>
+                                            <Sparkles className="w-3.5 h-3.5 text-emerald-500 opacity-60 flex-shrink-0 mt-0.5" />
                                         </button>
                                     ))}
                                 </div>
                             </div>
                         ) : (
                             <>
-                                {currentSession.messages.map((message, idx) => {
-                                    const prevMessage = currentSession.messages[idx - 1];
+                                {(currentSession.messages || []).map((message, idx) => {
+                                    const prevMessage = idx > 0 ? (currentSession.messages || [])[idx - 1] : undefined;
                                     const showDateSeparator = idx === 0 || (prevMessage && isDifferentDay(prevMessage.timestamp, message.timestamp));
 
                                     return (
                                         <div key={idx}>
                                             {showDateSeparator && (
                                                 <div className="flex items-center justify-center my-6">
-                                                    <div className="flex items-center gap-2 px-4 py-1.5 bg-slate-100 dark:bg-white/5 rounded-full">
+                                                    <div className="flex items-center gap-2 px-4 py-1.5 bg-slate-100 dark:bg-white/5 rounded-full border border-slate-200/60 dark:border-white/10">
                                                         <Clock className="w-3 h-3 text-slate-400" />
                                                         <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
                                                             {formatDateSeparator(message.timestamp)}
@@ -610,27 +638,27 @@ export default function ChatPage() {
                                             )}
                                             <div className={`flex gap-4 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                                 {message.role === 'assistant' && (
-                                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500/20 to-blue-500/20 border border-teal-100 dark:border-white/10 flex items-center justify-center flex-shrink-0">
-                                                        <Bot className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 via-teal-500/20 to-indigo-500/20 border border-emerald-500/30 flex items-center justify-center flex-shrink-0 shadow-md">
+                                                        <Bot className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
                                                     </div>
                                                 )}
                                                 <div className="flex flex-col">
-                                                    <div className={`max-w-xl px-5 py-4 break-words overflow-hidden ${message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`}>
+                                                    <div className={`max-w-2xl px-6 py-4.5 break-words overflow-hidden ${message.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`}>
                                                         {message.role === 'assistant' ? (
                                                             <MessageRenderer content={translatedContent[idx] || message.content} />
                                                         ) : (
                                                             <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">{translatedContent[idx] || message.content}</p>
                                                         )}
                                                     </div>
-                                                    <span className={`text-[10px] text-slate-400 mt-1 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+                                                    <span className={`text-[10px] font-medium text-slate-400 mt-1.5 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
                                                         {formatRelativeTime(message.timestamp)}
                                                     </span>
                                                 </div>
                                                 {/* TTS Button */}
                                                 <button
                                                     onClick={() => playTextToSpeech(translatedContent[idx] || message.content, idx)}
-                                                    className={`p-2 rounded-full transition-colors self-start ${playingMessageIndex === idx
-                                                        ? 'text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/10'
+                                                    className={`p-2 rounded-xl transition-all self-start ${playingMessageIndex === idx
+                                                        ? 'text-emerald-500 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/20 border border-emerald-500/30'
                                                         : 'text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'
                                                         }`}
                                                     title="Read aloud"
@@ -640,7 +668,7 @@ export default function ChatPage() {
                                                 </button>
 
                                                 {message.role === 'user' && (
-                                                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 flex items-center justify-center flex-shrink-0">
+                                                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-md shadow-emerald-500/20 ring-2 ring-emerald-500/20">
                                                         <User className="w-5 h-5 text-white" />
                                                     </div>
                                                 )}
@@ -651,8 +679,8 @@ export default function ChatPage() {
 
                                 {isTyping && (
                                     <div className="flex gap-4 justify-start">
-                                        <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-teal-500/20 to-blue-500/20 border border-teal-100 dark:border-white/10 flex items-center justify-center flex-shrink-0">
-                                            <Bot className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 via-teal-500/20 to-indigo-500/20 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
+                                            <Bot className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
                                         </div>
                                         <div className="chat-bubble-ai">
                                             <div className="typing-indicator">
@@ -669,15 +697,15 @@ export default function ChatPage() {
                     </div>
 
                     {/* Input Area */}
-                    <div className="p-6 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-xl border-t border-slate-200 dark:border-white/5">
-                        <div className="max-w-3xl mx-auto flex gap-3 relative">
+                    <div className="p-5 bg-white/90 dark:bg-[#030712]/90 backdrop-blur-2xl border-t border-slate-200/80 dark:border-white/10">
+                        <div className="max-w-4xl mx-auto flex gap-3 relative">
                             {/* Mic Button */}
                             <button
                                 type="button"
                                 onClick={isRecording ? stopRecording : startRecording}
-                                className={`p-3 rounded-xl transition-all duration-300 ${isRecording
+                                className={`p-3.5 rounded-xl transition-all duration-300 ${isRecording
                                     ? 'bg-red-500 shadow-lg shadow-red-500/30 animate-pulse text-white'
-                                    : 'bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-white/10'
+                                    : 'bg-slate-100 dark:bg-white/5 hover:bg-slate-200 dark:hover:bg-white/10 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200/80 dark:border-white/10'
                                     }`}
                                 title={isRecording ? "Stop Recording" : "Start Recording"}
                             >
@@ -690,13 +718,13 @@ export default function ChatPage() {
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
                                     placeholder={isRecording ? "Listening..." : t('chat.input.placeholder')}
-                                    className="flex-1 input-glass"
+                                    className="flex-1 input-glass font-medium text-base px-5"
                                     disabled={isTyping || isRecording}
                                 />
                                 <button
                                     type="submit"
                                     disabled={!input.trim() || isTyping}
-                                    className="btn-gradient ripple flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="btn-gradient-primary rounded-xl px-6 py-3.5 flex items-center gap-2.5 font-bold disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 shadow-lg shadow-emerald-500/25"
                                 >
                                     <span>{t('chat.send')}</span>
                                     <Send className="w-4 h-4" />
