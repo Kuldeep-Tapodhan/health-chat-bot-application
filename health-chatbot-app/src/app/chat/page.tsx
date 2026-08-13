@@ -373,12 +373,24 @@ export default function ChatPage() {
             console.error("Failed to sync user message", error);
         }
 
-        // Call Gemini 2.5 Flash via Backend API
+        // Pass previous history to backend stream API
+        const historyForAi = initialMessages.map((m: Message) => ({
+            role: m.role,
+            content: m.content
+        }));
+
+        // Call Gemini via Backend API
         try {
             const response = await fetch(`${API_BASE_URL}/chat/stream`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ message: userMessageContent }),
+                headers: { 
+                    'Content-Type': 'application/json',
+                    ...(typeof window !== 'undefined' && localStorage.getItem('token') ? { 'Authorization': `Bearer ${localStorage.getItem('token')}` } : {})
+                },
+                body: JSON.stringify({ 
+                    message: userMessageContent,
+                    history: historyForAi
+                }),
             });
 
             if (!response.ok) throw new Error(`AI Error: ${response.status}`);

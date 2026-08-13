@@ -29,8 +29,9 @@ class ChatResponse(BaseModel):
 
 class StreamRequest(BaseModel):
     message: str
+    history: list[dict] = []
 
-MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")
 
 # Initialize LLM
 llm = ChatGoogleGenerativeAI(
@@ -46,7 +47,24 @@ DF_CACHE = {}
 async def chat_stream(request: StreamRequest):
     async def generate():
         try:
-            async for chunk in llm.astream(request.message):
+            from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
+
+            messages_to_send = [
+                SystemMessage(content="You are an expert AI Health Assistant. Provide accurate, empathetic, and clear medical advice and health guidance. Always maintain context of the ongoing user conversation.")
+            ]
+
+            for item in request.history:
+                role = item.get("role") or item.get("sender")
+                content = item.get("content") or item.get("text") or item.get("message")
+                if role and content:
+                    if role in ["user", "human"]:
+                        messages_to_send.append(HumanMessage(content=content))
+                    elif role in ["assistant", "bot", "ai"]:
+                        messages_to_send.append(AIMessage(content=content))
+
+            messages_to_send.append(HumanMessage(content=request.message))
+
+            async for chunk in llm.astream(messages_to_send):
                 if hasattr(chunk, "content") and chunk.content:
                     yield chunk.content
         except Exception as e:
@@ -507,9 +525,22 @@ class ChatSessionUpdate(BaseModel):
 @router.get("/sessions")
 def get_chat_sessions(current_user: dict = Depends(get_current_user)):
     conn = get_db_connection()
-    sessions = conn.execute("SELECT id, title, created_at FROM ai_chats WHERE user_id = ? ORDER BY created_at DESC", (current_user["id"],)).fetchall()
+    sessions = conn.execute("SELECT id, title, messages, created_at FROM ai_chats WHERE user_id = ? ORDER BY created_at DESC", (current_user["id"],)).fetchall()
     conn.close()
-    return {"success": True, "sessions": [dict(s) for s in sessions]}
+    
+    session_list = []
+    for s in sessions:
+        s_dict = dict(s)
+        if isinstance(s_dict.get("messages"), str):
+            try:
+                s_dict["messages"] = json.loads(s_dict["messages"])
+            except Exception:
+                s_dict["messages"] = []
+        elif s_dict.get("messages") is None:
+            s_dict["messages"] = []
+        session_list.append(s_dict)
+        
+    return {"success": True, "sessions": session_list}
 
 @router.post("/sessions")
 def create_chat_session(payload: ChatSessionCreate, current_user: dict = Depends(get_current_user)):
@@ -533,7 +564,13 @@ def get_chat_session(session_id: str, current_user: dict = Depends(get_current_u
         raise HTTPException(status_code=404, detail="Session not found")
     
     s_dict = dict(session)
-    s_dict["messages"] = json.loads(s_dict["messages"])
+    if isinstance(s_dict.get("messages"), str):
+        try:
+            s_dict["messages"] = json.loads(s_dict["messages"])
+        except Exception:
+            s_dict["messages"] = []
+    elif s_dict.get("messages") is None:
+        s_dict["messages"] = []
     return {"success": True, "session": s_dict}
 
 @router.put("/sessions/{session_id}")
@@ -545,7 +582,13 @@ def update_chat_session(session_id: str, payload: ChatSessionUpdate, current_use
         raise HTTPException(status_code=404, detail="Session not found")
     
     title = payload.title if payload.title is not None else session["title"]
-    messages = json.dumps(payload.messages) if payload.messages is not None else session["messages"]
+    if payload.messages is not None:
+        if isinstance(payload.messages, str):
+            messages = payload.messages
+        else:
+            messages = json.dumps(payload.messages)
+    else:
+        messages = session["messages"]
     
     conn.execute("UPDATE ai_chats SET title = ?, messages = ? WHERE id = ?", (title, messages, session_id))
     conn.commit()
