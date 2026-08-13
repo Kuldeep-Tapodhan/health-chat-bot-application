@@ -1,0 +1,46 @@
+services:
+  # FastAPI Backend Service
+  backend:
+    build:
+      context: ./backend_fastapi
+      dockerfile: Dockerfile
+    container_name: health_ai_backend
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    env_file:
+      - ./backend_fastapi/.env
+    volumes:
+      - chroma_db_data:/app/chroma_db
+      - sqlite_db_data:/app/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Next.js Frontend Service
+  frontend:
+    build:
+      context: ./health-chatbot-app
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001}
+        NEXT_PUBLIC_APPWRITE_ENDPOINT: ${NEXT_PUBLIC_APPWRITE_ENDPOINT:-https://nyc.cloud.appwrite.io/v1}
+        NEXT_PUBLIC_APPWRITE_PROJECT_ID: ${NEXT_PUBLIC_APPWRITE_PROJECT_ID:-69370a87002fd794bb2c}
+        NEXT_PUBLIC_APPWRITE_DATABASE_ID: ${NEXT_PUBLIC_APPWRITE_DATABASE_ID:-693718fa0035792b67ac}
+    container_name: health_ai_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+
+
+volumes:
+  chroma_db_data:
+    driver: local
+  sqlite_db_data:
+    driver: local

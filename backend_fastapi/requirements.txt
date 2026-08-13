@@ -1,0 +1,110 @@
+# =======================
+# Core ML
+# =======================
+numpy
+regex
+
+# =======================
+# FastAPI Backend
+# =======================
+fastapi
+uvicorn
+python-dotenv
+python-multipart
+email-validator
+orjson
+pydantic
+pydantic-core
+pyjwt
+passlib[bcrypt]
+asgiref
+anyio
+h11
+httptools
+httpcore
+httpx
+sniffio
+exceptiongroup
+
+# =======================
+# LangChain Stack
+# =======================
+langchain<0.4.0
+langchain-community<0.4.0
+langchain-core<0.4.0
+langchain-text-splitters<0.4.0
+langchain-experimental<0.4.0
+langchain-google-genai
+langsmith
+
+# =======================
+# Vector Database
+# =======================
+chromadb
+chroma-hnswlib
+mmh3
+PyPika
+
+# =======================
+# Google
+# =======================
+google-generativeai
+google-ai-generativelanguage
+google-api-core
+google-api-python-client
+google-auth
+google-auth-httplib2
+googleapis-common-protos
+proto-plus
+protobuf
+grpcio
+grpcio-status
+
+# =======================
+# Networking / Requests
+# =======================
+requests
+requests-oauthlib
+requests-toolbelt
+urllib3
+certifi
+charset-normalizer
+idna
+cachetools
+oauthlib
+rsa
+pyasn1
+pyasn1-modules
+
+# =======================
+# Audio / Speech / Media
+# =======================
+
+# =======================
+# Data Handling
+# =======================
+pandas
+python-dateutil
+pytz
+pypdf
+
+# =======================
+# Utilities
+# =======================
+rich
+click
+colorama
+coloredlogs
+Deprecated
+humanfriendly
+PyYAML
+six
+attrs
+frozenlist
+multidict
+propcache
+packaging
+filelock
+importlib_metadata  
+importlib_resources
+typing-extensions

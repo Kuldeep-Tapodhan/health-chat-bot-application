@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+healtchatbot
+
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Models (User requested exclusion)
+model/
+model_4bit/
+*.pth
+*.bin
+*.safetensors
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+*.log
+
+# Gradio
+.gradio/
+
+# Dataset (User requested exclusion)
+dataset/
+
+# OS
+.DS_Store
+Thumbs.db
+./__pycache__/
+
+# Generated content
+backend_fastapi/static/audio/*.mp3
+backend_fastapi/chroma_db/
+backend_fastapi/temp_recording.webm

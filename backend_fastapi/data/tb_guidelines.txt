@@ -1,0 +1,15 @@
+NATIONAL TUBERCULOSIS ELIMINATION PROGRAM (NTEP) GUIDELINES
+
+1. Notification of TB Cases
+All medical practitioners (including private practitioners), clinics, hospitals, and laboratories are legally required to notify every TB case to the local public health authority.
+
+Q: Is a medical practitioner starting treatment of a TB patient expected to notify the case even if already notified by a Laboratory?
+A: Yes. The medical practitioner treating the patient is responsible for notifying the case. Duplicate notifications are handled by the system (Nikshay), but the treating physician must ensure notification to ensure the patient receives appropriate public health support and adherence monitoring. Notification by a laboratory does not exempt the treating practitioner from this duty.
+
+2. Diagnosis
+- Presumptive TB patients should be tested using molecular diagnostic tests (CBNAAT/TrueNat) as the primary diagnostic tool where available.
+- Chest X-ray is a screening tool.
+
+3. Treatment
+- Standard treatment for drug-sensitive TB is 6 months (2 months Intensive Phase + 4 months Continuation Phase).
+- Daily regimen is followed.
