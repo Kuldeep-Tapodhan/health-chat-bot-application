@@ -1,5 +1,5 @@
 const envApiUrl = (process.env as any).NEXT_PUBLIC_API_URL;
-const API_BASE_URL = envApiUrl 
+export const API_BASE_URL = envApiUrl 
     ? (envApiUrl.endsWith('/api') ? envApiUrl : `${envApiUrl}/api`) 
     : 'http://localhost:8001/api';
 

@@ -21,8 +21,8 @@ router = APIRouter()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-TEXT_MODEL = "gemini-1.5-pro"
-VISION_MODEL = "gemini-1.5-pro"
+TEXT_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+VISION_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
 if not GOOGLE_API_KEY:
     print("Warning: GOOGLE_API_KEY not found. Report analysis will fail.")

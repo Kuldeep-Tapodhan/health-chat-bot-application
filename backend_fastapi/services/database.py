@@ -232,17 +232,20 @@ def init_db():
         )
     """)
 
-    # 3. Regional Chats
-    conn.execute("""
-        CREATE TABLE IF NOT EXISTS regional_chats (
-            id TEXT PRIMARY KEY,
-            user_id TEXT NOT NULL,
-            title TEXT DEFAULT 'Untitled Chat',
-            messages TEXT DEFAULT '[]',
-            created_at TEXT NOT NULL,
-            FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-        )
-    """)
+    # Migrate legacy regional_chats to ai_chats if table exists
+    try:
+        conn.execute("""
+            INSERT INTO ai_chats (id, user_id, title, messages, created_at)
+            SELECT id, user_id, title, messages, created_at FROM regional_chats
+            ON CONFLICT (id) DO NOTHING
+        """)
+        conn.execute("DROP TABLE IF EXISTS regional_chats")
+    except Exception:
+        if hasattr(conn, "rollback"):
+            try:
+                conn.rollback()
+            except Exception:
+                pass
 
     # 4. Reports
     conn.execute("""

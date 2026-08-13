@@ -26,6 +26,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ content }) => {
 
 // Parse content to extract chart blocks and regular text
 function parseContent(content: string): Array<{ type: 'text' | 'chart'; content?: string; data?: any }> {
+    if (!content || typeof content !== 'string') return [];
     const parts: Array<{ type: 'text' | 'chart'; content?: string; data?: any }> = [];
 
     // Regex to match ```chart ... ``` or ```json ... ``` blocks

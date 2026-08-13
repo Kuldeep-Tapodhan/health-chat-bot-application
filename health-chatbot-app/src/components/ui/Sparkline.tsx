@@ -15,11 +15,11 @@ export default function Sparkline({
     height = 40,
     strokeWidth = 2,
 }: SparklineProps) {
-    const chartData = data.map((value, index) => ({ value, index }));
+    const chartData = (Array.isArray(data) ? data : []).map((value, index) => ({ value, index }));
 
     return (
-        <div style={{ width: '100%', height }}>
-            <ResponsiveContainer width="100%" height="100%">
+        <div style={{ width: '100%', height }} className="min-w-0">
+            <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={10}>
                 <LineChart data={chartData}>
                     <defs>
                         <linearGradient id={`sparkline-gradient-${color.replace('#', '')}`} x1="0" y1="0" x2="0" y2="1">

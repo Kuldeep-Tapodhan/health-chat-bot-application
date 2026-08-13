@@ -30,12 +30,9 @@ def get_admin_stats(admin: dict = Depends(get_current_admin_user)):
         total_users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
         thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).isoformat()
         active_users = conn.execute("SELECT COUNT(*) FROM users WHERE last_active >= ?", (thirty_days_ago,)).fetchone()[0]
-        ai_chats_count = conn.execute("SELECT COUNT(*) FROM ai_chats").fetchone()[0]
-        regional_chats_count = conn.execute("SELECT COUNT(*) FROM regional_chats").fetchone()[0]
+        total_chats = conn.execute("SELECT COUNT(*) FROM ai_chats").fetchone()[0]
         total_reports = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0]
         conn.close()
-
-        total_chats = ai_chats_count + regional_chats_count
 
         return {
             "totalUsers": total_users,
@@ -69,17 +66,7 @@ def get_recent_activity(limit: int = 10, admin: dict = Depends(get_current_admin
                 "details": r["title"] or "Untitled Chat"
             })
 
-        # Regional Chats
-        reg_rows = conn.execute("SELECT id, title, created_at FROM regional_chats ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
-        for r in reg_rows:
-            activity.append({
-                "id": r["id"],
-                "type": "chat",
-                "action": "New Regional Chat",
-                "user": "User",
-                "timestamp": r["created_at"],
-                "details": r["title"] or "Untitled Chat"
-            })
+
 
         # Reports
         rep_rows = conn.execute("SELECT id, title, timestamp FROM reports ORDER BY timestamp DESC LIMIT ?", (limit,)).fetchall()
@@ -219,7 +206,6 @@ def delete_user(user_id: str, admin: dict = Depends(get_current_admin_user)):
         conn = get_db_connection()
         conn.execute("DELETE FROM users WHERE id = ?", (user_id,))
         conn.execute("DELETE FROM ai_chats WHERE user_id = ?", (user_id,))
-        conn.execute("DELETE FROM regional_chats WHERE user_id = ?", (user_id,))
         conn.execute("DELETE FROM reports WHERE user_id = ?", (user_id,))
         conn.commit()
         conn.close()
@@ -238,14 +224,12 @@ def get_analytics_usage(admin: dict = Depends(get_current_admin_user)):
     try:
         conn = get_db_connection()
         ai_val = conn.execute("SELECT COUNT(*) FROM ai_chats").fetchone()[0]
-        reg_val = conn.execute("SELECT COUNT(*) FROM regional_chats").fetchone()[0]
         rep_val = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0]
         search_count = conn.execute("SELECT COUNT(*) FROM search_logs").fetchone()[0]
         conn.close()
 
         return [
             {"name": "AI Chat", "value": ai_val},
-            {"name": "Regional Chat", "value": reg_val},
             {"name": "Reports Analysis", "value": rep_val},
             {"name": "Hospital Search", "value": search_count}
         ]
@@ -299,7 +283,6 @@ def get_analytics_users_detailed(limit: int = 20, admin: dict = Depends(get_curr
         for u in users:
             uid = u["id"]
             ai_c = conn.execute("SELECT COUNT(*) FROM ai_chats WHERE user_id = ?", (uid,)).fetchone()[0]
-            reg_c = conn.execute("SELECT COUNT(*) FROM regional_chats WHERE user_id = ?", (uid,)).fetchone()[0]
             rep_c = conn.execute("SELECT COUNT(*) FROM reports WHERE user_id = ?", (uid,)).fetchone()[0]
             s_c = conn.execute("SELECT COUNT(*) FROM search_logs WHERE user_id = ?", (uid,)).fetchone()[0]
 
@@ -308,7 +291,7 @@ def get_analytics_users_detailed(limit: int = 20, admin: dict = Depends(get_curr
                 "name": u["name"],
                 "email": u["email"],
                 "joined": u["created_at"],
-                "chats": ai_c + reg_c,
+                "chats": ai_c,
                 "reports": rep_c,
                 "searches": s_c,
                 "role": u["role"]
@@ -342,15 +325,15 @@ def get_analytics_insights(admin: dict = Depends(get_current_admin_user)):
     Generate AI Daily Briefing based on SQLite stats.
     """
     try:
-        from langchain_openai import ChatOpenAI
-        api_key = os.getenv("LIGHTNING_API_KEY")
-        if not api_key:
-            return {"content": "AI Insights unavailable: API Key missing."}
+        from langchain_google_genai import ChatGoogleGenerativeAI
+        google_api_key = os.getenv("GOOGLE_API_KEY")
+        if not google_api_key:
+            return {"content": "AI Insights unavailable: GOOGLE_API_KEY missing."}
 
-        llm = ChatOpenAI(
-            openai_api_base="https://lightning.ai/api/v1",
-            api_key=api_key,
-            model_name="lightning-ai/llama-3.3-70b",
+        model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+        llm = ChatGoogleGenerativeAI(
+            api_key=google_api_key,
+            model=model_name,
             temperature=0.3
         )
 

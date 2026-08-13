@@ -38,7 +38,6 @@ export default function Sidebar() {
     const navItems = [
         { name: t('nav.dashboard'), href: '/dashboard', icon: LayoutDashboard },
         { name: t('nav.ai_chat'), href: '/chat', icon: MessageSquare },
-        { name: t('nav.regional_chat'), href: '/regional-chat', icon: MessageSquare },
         { name: t('nav.analysis'), href: '/reports', icon: FileText },
         { name: t('nav.find_care'), href: '/hospitals', icon: MapPin },
         { name: t('nav.outbreaks'), href: '/outbreaks', icon: Activity },

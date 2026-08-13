@@ -10,7 +10,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parent.parent
 VECTOR_DB_DIR = os.path.join(BASE_DIR, "chroma_db")
 # Use Google Embeddings via API to avoid massive local Torch dependencies
-embeddings = GoogleGenerativeAIEmbeddings(model="models/embedding-001")
+embeddings = GoogleGenerativeAIEmbeddings(model="models/gemini-embedding-001")
 
 
 def get_vectorstore():

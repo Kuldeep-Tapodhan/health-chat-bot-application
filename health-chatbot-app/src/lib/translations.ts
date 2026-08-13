@@ -3,7 +3,6 @@ export const translations = {
         // Sidebar
         'nav.dashboard': 'Dashboard',
         'nav.ai_chat': 'AI Chat',
-        'nav.regional_chat': 'Regional Chat',
         'nav.analysis': 'Analysis',
         'nav.find_care': 'Find Care',
         'nav.admin_console': 'Admin Console',
@@ -84,17 +83,6 @@ export const translations = {
         'chat.prompt.sleep': 'How to improve sleep quality?',
         'chat.prompt.bp': 'Explain blood pressure readings',
 
-        // Regional Chat
-        'regional.sidebar_title': 'Regional Chats',
-        'regional.new_chat': 'New Regional Chat',
-        'regional.search_placeholder': 'Search chats...',
-        'regional.header.title': 'New Regional Chat',
-        'regional.header.subtitle': 'Regional Assistant • Online',
-        'regional.welcome.title': 'Namaste! How can I help?',
-        'regional.welcome.subtitle': 'I am your multilingual regional health assistant. Ask me questions in your preferred language about your uploaded documents.',
-        'regional.input.placeholder': 'Ask your regional assistant...',
-        'regional.input.listening': 'Listening...',
-        'regional.disclaimer': 'AI can make mistakes. Please verify important information.',
 
         // Reports
         'reports.title': 'Report Analysis',
@@ -177,7 +165,6 @@ export const translations = {
         // Sidebar
         'nav.dashboard': 'डैशबोर्ड',
         'nav.ai_chat': 'एआई चैट',
-        'nav.regional_chat': 'क्षेत्रीय चैट',
         'nav.analysis': 'विश्लेषण',
         'nav.find_care': 'देखभाल खोजें',
         'nav.admin_console': 'एडमिन कंसोल',
@@ -257,17 +244,6 @@ export const translations = {
         'chat.prompt.sleep': 'नींद की गुणवत्ता कैसे सुधारें?',
         'chat.prompt.bp': 'रक्तचाप रीडिंग समझाएं',
 
-        // Regional Chat
-        'regional.sidebar_title': 'क्षेत्रीय चैट',
-        'regional.new_chat': 'नई क्षेत्रीय चैट',
-        'regional.search_placeholder': 'चैट खोजें...',
-        'regional.header.title': 'नई क्षेत्रीय चैट',
-        'regional.header.subtitle': 'क्षेत्रीय सहायक • ऑनलाइन',
-        'regional.welcome.title': 'नमस्ते! मैं आपकी कैसे मदद कर सकता हूँ?',
-        'regional.welcome.subtitle': 'मैं आपका बहुभाषी क्षेत्रीय स्वास्थ्य सहायक हूँ। अपने अपलोड किए गए दस्तावेज़ों के बारे में अपनी पसंदीदा भाषा में मुझसे प्रश्न पूछें।',
-        'regional.input.placeholder': 'अपने क्षेत्रीय सहायक से पूछें...',
-        'regional.input.listening': 'सुन रहा हूँ...',
-        'regional.disclaimer': 'एआई गलतियाँ कर सकता है। कृपया महत्वपूर्ण जानकारी सत्यापित करें।',
 
         // Reports
         'reports.title': 'रिपोर्ट विश्लेषण',
@@ -350,7 +326,6 @@ export const translations = {
         // Sidebar
         'nav.dashboard': 'டாஷ்போர்டு',
         'nav.ai_chat': 'AI அரட்டை',
-        'nav.regional_chat': 'பிராந்திய அரட்டை',
         'nav.analysis': 'பகுப்பாய்வு',
         'nav.find_care': 'மருத்துவரைத் தேடுங்கள்',
         'nav.admin_console': 'நிர்வாக கன்சோல்',
@@ -430,17 +405,6 @@ export const translations = {
         'chat.prompt.sleep': 'தூக்கத்தின் தரத்தை மேம்படுத்துவது எப்படி?',
         'chat.prompt.bp': 'இரத்த அழுத்த அளவீடுகளை விளக்குங்கள்',
 
-        // Regional Chat
-        'regional.sidebar_title': 'பிராந்திய அரட்டைகள்',
-        'regional.new_chat': 'புதிய பிராந்திய அரட்டை',
-        'regional.search_placeholder': 'அரட்டைகளைத் தேடுங்கள்...',
-        'regional.header.title': 'புதிய பிராந்திய அரட்டை',
-        'regional.header.subtitle': 'பிராந்திய உதவியாளர் • ஆன்லைனில்',
-        'regional.welcome.title': 'வணக்கம்! நான் உங்களுக்கு எப்படி உதவ முடியும்?',
-        'regional.welcome.subtitle': 'நான் உங்கள் பன்மொழி பிராந்திய சுகாதார உதவியாளர். உங்கள் பதிவேற்றப்பட்ட ஆவணங்களைப் பற்றி உங்களுக்கு விருப்பமான மொழியில் என்னிடம் கேள்விகளைக் கேளுங்கள்.',
-        'regional.input.placeholder': 'உங்கள் பிராந்திய உதவியாளரிடம் கேளுங்கள்...',
-        'regional.input.listening': 'கேட்கிறது...',
-        'regional.disclaimer': 'AI தவறுகளைச் செய்யலாம். முக்கியமான தகவல்களைச் சரிபார்க்கவும்.',
 
         // Reports
         'reports.title': 'அறிக்கை பகுப்பாய்வு',
@@ -523,7 +487,6 @@ export const translations = {
         // Sidebar
         'nav.dashboard': 'డ్యాష్‌బోర్డ్',
         'nav.ai_chat': 'AI చాట్',
-        'nav.regional_chat': 'ప్రాంతీయ చాట్',
         'nav.analysis': 'విశ్లేషణ',
         'nav.find_care': 'వైద్య సంరక్షణను కనుగొనండి',
         'nav.admin_console': 'అడ్మిన్ కన్సోల్',
@@ -603,17 +566,6 @@ export const translations = {
         'chat.prompt.sleep': 'నిద్ర నాణ్యతను ఎలా మెరుగుపరచాలి?',
         'chat.prompt.bp': 'రక్తపోటు రీడింగులను వివరించండి',
 
-        // Regional Chat
-        'regional.sidebar_title': 'ప్రాంతీయ చాట్‌లు',
-        'regional.new_chat': 'కొత్త ప్రాంతీయ చాట్',
-        'regional.search_placeholder': 'చాట్‌లను శోధించండి...',
-        'regional.header.title': 'కొత్త ప్రాంతీయ చాట్',
-        'regional.header.subtitle': 'ప్రాంతీయ సహాయకుడు • ఆన్‌లైన్',
-        'regional.welcome.title': 'నమస్తే! నేను మీకు ఎలా సహాయం చేయగలను?',
-        'regional.welcome.subtitle': 'నేను మీ బహుభాషా ప్రాంతీయ ఆరోగ్య సహాయకుడిని. మీరు అప్‌లోడ్ చేసిన పత్రాల గురించి మీకు నచ్చిన భాషలో నన్ను ప్రశ్నలు అడగండి.',
-        'regional.input.placeholder': 'మీ ప్రాంతీయ సహాయకుడిని అడగండి...',
-        'regional.input.listening': 'వినబడుతోంది...',
-        'regional.disclaimer': 'AI తప్పులు చేయవచ్చు. దయచేసి ముఖ్యమైన సమాచారాన్ని ధృవీకరించండి.',
 
         // Reports
         'reports.title': 'నివేదిక విశ్లేషణ',
@@ -696,7 +648,6 @@ export const translations = {
         // Sidebar
         'nav.dashboard': 'ড্যাশবোর্ড',
         'nav.ai_chat': 'এআই চ্যাট',
-        'nav.regional_chat': 'আঞ্চলিক চ্যাট',
         'nav.analysis': 'বিশ্লেষণ',
         'nav.find_care': 'সেবা খুঁজুন',
         'nav.admin_console': 'অ্যাডমিন কনসোল',
@@ -776,17 +727,6 @@ export const translations = {
         'chat.prompt.sleep': 'ঘুমের মান কীভাবে উন্নত করবেন?',
         'chat.prompt.bp': 'রক্তচাপ রিডিং ব্যাখ্যা করুন',
 
-        // Regional Chat
-        'regional.sidebar_title': 'আঞ্চলিক চ্যাট',
-        'regional.new_chat': 'নতুন আঞ্চলিক চ্যাট',
-        'regional.search_placeholder': 'চ্যাট অনুসন্ধান করুন...',
-        'regional.header.title': 'নতুন আঞ্চলিক চ্যাট',
-        'regional.header.subtitle': 'আঞ্চলিক সহকারী • অনলাইনে',
-        'regional.welcome.title': 'নমস্কার! আমি আপনাকে কীভাবে সাহায্য করতে পারি?',
-        'regional.welcome.subtitle': 'আমি আপনার বহুভাষিক আঞ্চলিক স্বাস্থ্য সহকারী। আপনার আপলোড করা নথি সম্পর্কে আপনার পছন্দের ভাষায় আমাকে প্রশ্ন জিজ্ঞাসা করুন।',
-        'regional.input.placeholder': 'আপনার আঞ্চলিক সহকারীকে জিজ্ঞাসা করুন...',
-        'regional.input.listening': 'শুনছি...',
-        'regional.disclaimer': 'এআই ভুল করতে পারে। অনুগ্রহ করে গুরুত্বপূর্ণ তথ্য যাচাই করুন।',
 
         // Reports
         'reports.title': 'রিপোর্ট বিশ্লেষণ',
@@ -869,7 +809,6 @@ export const translations = {
         // Sidebar
         'nav.dashboard': 'ಡ್ಯಾಶ್‌ಬೋರ್ಡ್',
         'nav.ai_chat': 'AI ಚಾಟ್',
-        'nav.regional_chat': 'ಪ್ರಾದೇಶಿಕ ಚಾಟ್',
         'nav.analysis': 'ವಿಶ್ಲೇಷಣೆ',
         'nav.find_care': 'ಆರೈಕೆಯನ್ನು ಹುಡುಕಿ',
         'nav.admin_console': 'ನಿರ್ವಾಹಕ ಕನ್ಸೋಲ್',
@@ -949,17 +888,6 @@ export const translations = {
         'chat.prompt.sleep': 'ನಿದ್ರೆಯ ಗುಣಮಟ್ಟವನ್ನು ಸುಧಾರಿಸುವುದು ಹೇಗೆ?',
         'chat.prompt.bp': 'ರಕ್ತದೊತ್ತಡದ ವಾಚನಗೋಷ್ಠಿಯನ್ನು ವಿವರಿಸಿ',
 
-        // Regional Chat
-        'regional.sidebar_title': 'ಪ್ರಾದೇಶಿಕ ಚಾಟ್‌ಗಳು',
-        'regional.new_chat': 'ಹೊಸ ಪ್ರಾದೇಶಿಕ ಚಾಟ್',
-        'regional.search_placeholder': 'ಚಾಟ್‌ಗಳನ್ನು ಹುಡುಕಿ...',
-        'regional.header.title': 'ಹೊಸ ಪ್ರಾದೇಶಿಕ ಚಾಟ್',
-        'regional.header.subtitle': 'ಪ್ರಾದೇಶಿಕ ಸಹಾಯಕ • ಆನ್‌ಲೈನ್',
-        'regional.welcome.title': 'ನಮಸ್ಕಾರ! ನಾನು ನಿಮಗೆ ಹೇಗೆ ಸಹಾಯ ಮಾಡಬಹುದು?',
-        'regional.welcome.subtitle': 'ನಾನು ನಿಮ್ಮ ಬಹುಭಾಷಾ ಪ್ರಾದೇಶಿಕ ಆರೋಗ್ಯ ಸಹಾಯಕ. ನಿಮ್ಮ ಅಪ್‌ಲೋಡ್ ಮಾಡಿದ ದಾಖಲೆಗಳ ಬಗ್ಗೆ ನಿಮ್ಮ ಆದ್ಯತೆಯ ಭಾಷೆಯಲ್ಲಿ ನನ್ನನ್ನು ಪ್ರಶ್ನೆಗಳನ್ನು ಕೇಳಿ.',
-        'regional.input.placeholder': 'ನಿಮ್ಮ ಪ್ರಾದೇಶಿಕ ಸಹಾಯಕರನ್ನು ಕೇಳಿ...',
-        'regional.input.listening': 'ಕೇಳುತ್ತಿದೆ...',
-        'regional.disclaimer': 'AI ತಪ್ಪುಗಳನ್ನು ಮಾಡಬಹುದು. ದಯವಿಟ್ಟು ಪ್ರಮುಖ ಮಾಹಿತಿಯನ್ನು ಪರಿಶೀಲಿಸಿ.',
 
         // Reports
         'reports.title': 'ವರದಿ ವಿಶ್ಲೇಷಣೆ',
@@ -1042,7 +970,6 @@ export const translations = {
         // Sidebar
         'nav.dashboard': 'ഡാഷ്‌ബോർഡ്',
         'nav.ai_chat': 'AI ചാറ്റ്',
-        'nav.regional_chat': 'പ്രാദേശിക ചാറ്റ്',
         'nav.analysis': 'വിശകലനം',
         'nav.find_care': 'ചികിത്സ കണ്ടെത്തുക',
         'nav.admin_console': 'അഡ്മിൻ കൺസോൾ',
@@ -1122,17 +1049,6 @@ export const translations = {
         'chat.prompt.sleep': 'ഉറക്കത്തിന്റെ ഗുണനിലവാരം എങ്ങനെ മെച്ചപ്പെടുത്താം?',
         'chat.prompt.bp': 'രക്തസമ്മർദ്ദ വായനകൾ വിശദീകരിക്കുക',
 
-        // Regional Chat
-        'regional.sidebar_title': 'പ്രാദേശിക ചാറ്റുകൾ',
-        'regional.new_chat': 'പുതിയ പ്രാദേശിക ചാറ്റ്',
-        'regional.search_placeholder': 'ചാറ്റുകൾ തിരയുക...',
-        'regional.header.title': 'പുതിയ പ്രാദേശിക ചാറ്റ്',
-        'regional.header.subtitle': 'പ്രാദേശിക അസിസ്റ്റന്റ് • ഓൺലൈൻ',
-        'regional.welcome.title': 'നമസ്കാരം! എനിക്ക് നിങ്ങളെ എങ്ങനെ സഹായിക്കാനാകും?',
-        'regional.welcome.subtitle': 'ഞാൻ നിങ്ങളുടെ ബഹുഭാഷാ പ്രാദേശിക ആരോഗ്യ അസിസ്റ്റന്റാണ്. നിങ്ങൾ അപ്‌ലോഡ് ചെയ്ത രേഖകളെക്കുറിച്ച് നിങ്ങളുടെ ഇഷ്ടപ്പെട്ട ഭാഷയിൽ എന്നോട് ചോദ്യങ്ങൾ ചോദിക്കുക.',
-        'regional.input.placeholder': 'നിങ്ങളുടെ പ്രാദേശിക അസിസ്റ്റന്റിനോട് ചോദിക്കുക...',
-        'regional.input.listening': 'കേൾക്കുന്നു...',
-        'regional.disclaimer': 'AI തെറ്റുകൾ വരുത്തിയേക്കാം. പ്രധാനപ്പെട്ട വിവരങ്ങൾ പരിശോധിക്കുക.',
 
         // Reports
         'reports.title': 'റിപ്പോർട്ട് വിശകലനം',
@@ -1215,7 +1131,6 @@ export const translations = {
         // Sidebar
         'nav.dashboard': 'डॅशबोर्ड',
         'nav.ai_chat': 'एआय चॅट',
-        'nav.regional_chat': 'प्रादेशिक चॅट',
         'nav.analysis': 'विश्लेषण',
         'nav.find_care': 'काळजी शोधा',
         'nav.admin_console': 'अॅडमिन कन्सोल',
@@ -1295,17 +1210,6 @@ export const translations = {
         'chat.prompt.sleep': 'झोपण्याची गुणवत्ता कशी सुधारायची?',
         'chat.prompt.bp': 'रक्तदाब रीडिंग स्पष्ट करा',
 
-        // Regional Chat
-        'regional.sidebar_title': 'प्रादेशिक चॅट्स',
-        'regional.new_chat': 'नवीन प्रादेशिक चॅट',
-        'regional.search_placeholder': 'चॅट्स शोधा...',
-        'regional.header.title': 'नवीन प्रादेशिक चॅट',
-        'regional.header.subtitle': 'प्रादेशिक सहाय्यक • ऑनलाइन',
-        'regional.welcome.title': 'नमस्ते! मी तुम्हाला कशी मदत करू शकतो?',
-        'regional.welcome.subtitle': 'मी तुमचा बहुभाषिक प्रादेशिक आरोग्य सहाय्यक आहे. आपल्या अपलोड केलेल्या कागदपत्रांबद्दल आपल्या पसंतीच्या भाषेत मला प्रश्न विचारा.',
-        'regional.input.placeholder': 'आपल्या प्रादेशिक सहाय्यकाला विचारा...',
-        'regional.input.listening': 'ऐकत आहे...',
-        'regional.disclaimer': 'एआय चुका करू शकते. कृपया महत्वाची माहिती सत्यापित करा.',
 
         // Reports
         'reports.title': 'अहवाल विश्लेषण',
@@ -1388,7 +1292,6 @@ export const translations = {
         // Sidebar
         'nav.dashboard': 'ડેશબોર્ડ',
         'nav.ai_chat': 'AI ચેટ',
-        'nav.regional_chat': 'પ્રાદેશિક ચેટ',
         'nav.analysis': 'વિશ્લેષણ',
         'nav.find_care': 'સંભાળ શોધો',
         'nav.admin_console': 'એડમિન કન્સોલ',
@@ -1468,17 +1371,6 @@ export const translations = {
         'chat.prompt.sleep': 'ઊંઘની ગુણવત્તા કેવી રીતે સુધારવી?',
         'chat.prompt.bp': 'બ્લડ પ્રેશર રીડિંગ્સ સમજાવો',
 
-        // Regional Chat
-        'regional.sidebar_title': 'પ્રાદೇಶಿಕ ચેટ્સ',
-        'regional.new_chat': 'નવી પ્રાદેશિક ચેટ',
-        'regional.search_placeholder': 'ચેટ્સ શોધો...',
-        'regional.header.title': 'નવી પ્રાદેશિક ચેટ',
-        'regional.header.subtitle': 'પ્રાદેશિક સહાયક • ઓનલાઇન',
-        'regional.welcome.title': 'નમસ્તે! હું તમને કેવી રીતે મદદ કરી શકું?',
-        'regional.welcome.subtitle': 'હું તમારો બહુભાષી પ્રાદેશિક આરોગ્ય સહાયક છું. તમારા અપલોડ કરેલા દસ્તાવેજો વિશે તમારી પસંદગીની ભાષામાં મને પ્રશ્નો પૂછો.',
-        'regional.input.placeholder': 'તમારા પ્રાદેશિક સહાયકને પૂછો...',
-        'regional.input.listening': 'સાંભળી રહ્યો છું...',
-        'regional.disclaimer': 'AI ભૂલો કરી શકે છે. કૃપા કરીને મહત્વપૂર્ણ માહિતી ચકાસો.',
 
         // Reports
         'reports.title': 'રિપોર્ટ વિશ્લેષણ',

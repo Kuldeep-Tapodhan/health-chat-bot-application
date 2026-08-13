@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from services.rag_service import get_retriever
@@ -26,16 +27,32 @@ class ChatResponse(BaseModel):
     message: str
     chart_data: dict = None
 
-# Initialize LLM
+class StreamRequest(BaseModel):
+    message: str
+
+MODEL_NAME = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+
 # Initialize LLM
 llm = ChatGoogleGenerativeAI(
     api_key=os.getenv("GOOGLE_API_KEY"),
-    model="gemini-1.5-pro",
+    model=MODEL_NAME,
     temperature=0
 )
 
 # Global Cache for DataFrames
 DF_CACHE = {}
+
+@router.post("/stream")
+async def chat_stream(request: StreamRequest):
+    async def generate():
+        try:
+            async for chunk in llm.astream(request.message):
+                if hasattr(chunk, "content") and chunk.content:
+                    yield chunk.content
+        except Exception as e:
+            yield f"Error generating response: {str(e)}"
+
+    return StreamingResponse(generate(), media_type="text/plain")
 
 @router.post("/query", response_model=ChatResponse)
 async def chat_endpoint(request: ChatRequest):
@@ -205,7 +222,7 @@ async def chat_endpoint(request: ChatRequest):
         You are a data analysis agent specialized in HEALTH and MEDICAL data. 
         
         RESTRICT YOUR DOMAIN:
-        1. You are a **Regional Health Assistant**.
+        1. You are a **Health AI Assistant**.
         2. You SHOULD answer questions related to health, diseases, medical data, hospital locations, and outbreaks.
         3. If the answer is in the provided dataset, use it. If not, use your general medical knowledge.
         4. **CRITICAL:** If the user asks about a clearly NON-MEDICAL topic (e.g., "what is love", "describe a bike", "jokes", "coding", "movies"), you MUST reply with: "I am a health assistant and can only help with medical or health-related queries." and STOP.

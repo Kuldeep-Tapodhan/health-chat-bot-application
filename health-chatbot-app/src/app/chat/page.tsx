@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { apiClient } from '@/lib/api-client';
+import { apiClient, API_BASE_URL } from '@/lib/api-client';
 import Sidebar from '@/components/Sidebar';
 import { Send, Bot, User, Sparkles, Plus, Trash2, MessageSquare, Mic, Square, Volume2, Globe, ChevronDown, Check, Clock, Stethoscope, Heart, Brain } from 'lucide-react';
 import MessageRenderer from '@/components/MessageRenderer';
@@ -102,13 +102,25 @@ export default function ChatPage() {
                 
                 if (response.success && response.sessions) {
                     // API returns sessions in {id, title, messages, ...}
-                    const loadedSessions = response.sessions.map((doc: any) => ({
-                        $id: doc.id || doc.session_id || doc.$id, // Adjust based on actual backend field
-                        title: doc.title,
-                        messages: typeof doc.messages === 'string' ? JSON.parse(doc.messages) : doc.messages,
-                        userId: doc.user_id || doc.userId,
-                        createdAt: doc.created_at || doc.createdAt
-                    }));
+                    const loadedSessions = response.sessions.map((doc: any) => {
+                        let parsedMessages = [];
+                        if (typeof doc.messages === 'string') {
+                            try {
+                                parsedMessages = JSON.parse(doc.messages) || [];
+                            } catch (e) {
+                                parsedMessages = [];
+                            }
+                        } else if (Array.isArray(doc.messages)) {
+                            parsedMessages = doc.messages;
+                        }
+                        return {
+                            $id: doc.id || doc.session_id || doc.$id,
+                            title: doc.title || 'New Chat',
+                            messages: Array.isArray(parsedMessages) ? parsedMessages : [],
+                            userId: doc.user_id || doc.userId,
+                            createdAt: doc.created_at || doc.createdAt
+                        };
+                    });
 
                     setSessions(loadedSessions);
 
@@ -122,7 +134,7 @@ export default function ChatPage() {
                 }
             } catch (err: any) {
                 console.error("Failed to load sessions from API", err);
-                if (sessions.length === 0) createNewSession();
+                if (!sessions || sessions.length === 0) createNewSession();
             }
         };
         fetchSessions();
@@ -154,8 +166,8 @@ export default function ChatPage() {
             return;
         }
 
-        const currentSession = sessions.find(s => s.$id === currentSessionId);
-        if (currentSession && currentSession.messages.length > 0) {
+        const currentSession = (sessions || []).find(s => s.$id === currentSessionId);
+        if (currentSession && Array.isArray(currentSession.messages) && currentSession.messages.length > 0) {
             translateAllMessages(currentSession.messages);
         }
     }, [currentSessionId, chatLanguage]);
@@ -165,8 +177,7 @@ export default function ChatPage() {
         const textsToTranslate = messages.map(m => m.content);
 
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
-            const response = await fetch(`${apiUrl}/translate`, {
+            const response = await fetch(`${API_BASE_URL}/translate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ texts: textsToTranslate, target_lang: chatLanguage.split('-')[0] })
@@ -277,10 +288,8 @@ export default function ChatPage() {
         formData.append('file', audioBlob, 'recording.webm');
         formData.append('language', chatLanguage);
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
-
         try {
-            const response = await fetch(`${apiUrl}/speech/stt`, {
+            const response = await fetch(`${API_BASE_URL}/speech/stt`, {
                 method: 'POST',
                 body: formData,
             });
@@ -304,10 +313,9 @@ export default function ChatPage() {
             return;
         }
 
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
         try {
             setPlayingMessageIndex(index);
-            const response = await fetch(`${apiUrl}/speech/tts`, {
+            const response = await fetch(`${API_BASE_URL}/speech/tts`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text, language: chatLanguage }),
@@ -339,15 +347,16 @@ export default function ChatPage() {
         setError(null);
 
         // Get current session snapshot
-        const currentSession = sessions.find(s => s.$id === currentSessionId);
+        const currentSession = (sessions || []).find(s => s.$id === currentSessionId);
         if (!currentSession) return;
 
         // 1. Add User Message Locally
         const userMessage: Message = { role: 'user', content: userMessageContent, timestamp: Date.now() };
-        let currentMessages = [...currentSession.messages, userMessage];
+        const initialMessages = Array.isArray(currentSession.messages) ? currentSession.messages : [];
+        let currentMessages = [...initialMessages, userMessage];
 
         // Optimistic UI Update
-        setSessions(prev => prev.map(s =>
+        setSessions(prev => (prev || []).map(s =>
             s.$id === currentSessionId ? { ...s, messages: currentMessages } : s
         ));
 
@@ -364,13 +373,9 @@ export default function ChatPage() {
             console.error("Failed to sync user message", error);
         }
 
-        // Call Lightning AI
-        const lightningApiUrl = process.env.NEXT_PUBLIC_LIGHTNING_API_URL;
-
+        // Call Gemini 2.5 Flash via Backend API
         try {
-            if (!lightningApiUrl) throw new Error('Lightning AI URL not configured');
-
-            const response = await fetch(`${lightningApiUrl}/api/chat/stream`, {
+            const response = await fetch(`${API_BASE_URL}/chat/stream`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ message: userMessageContent }),
@@ -414,8 +419,8 @@ export default function ChatPage() {
             const errorMessageContent = `Error: ${error.message || 'Could not connect to AI'}`;
             const errorMessage: Message = { role: 'assistant', content: errorMessageContent, timestamp: Date.now() };
 
-            setSessions(prev => prev.map(s =>
-                s.$id === currentSessionId ? { ...s, messages: [...s.messages, errorMessage] } : s
+            setSessions(prev => (prev || []).map(s =>
+                s.$id === currentSessionId ? { ...s, messages: [...(Array.isArray(s.messages) ? s.messages : []), errorMessage] } : s
             ));
             toast.error(error.message || 'Could not connect to AI');
         } finally {
@@ -426,8 +431,7 @@ export default function ChatPage() {
     // Helper to translate single message and update state
     const translateMessage = async (text: string, index: number) => {
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8001/api';
-            const response = await fetch(`${apiUrl}/translate`, {
+            const response = await fetch(`${API_BASE_URL}/translate`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ texts: [text], target_lang: chatLanguage.split('-')[0] })
@@ -570,7 +574,7 @@ export default function ChatPage() {
                     <div className="flex-1 overflow-y-auto p-6 space-y-6">
                         {/* Errors now shown via toast notifications */}
 
-                        {(!currentSession || currentSession.messages.length === 0) ? (
+                        {(!currentSession || !Array.isArray(currentSession.messages) || currentSession.messages.length === 0) ? (
                             <div className="h-full flex flex-col items-center justify-center text-center max-w-md mx-auto">
                                 <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-teal-500 to-electric-blue flex items-center justify-center mb-6 shadow-lg shadow-teal-500/25 animate-float">
                                     <Sparkles className="w-10 h-10 text-white" />
@@ -592,8 +596,8 @@ export default function ChatPage() {
                             </div>
                         ) : (
                             <>
-                                {currentSession.messages.map((message, idx) => {
-                                    const prevMessage = currentSession.messages[idx - 1];
+                                {(currentSession.messages || []).map((message, idx) => {
+                                    const prevMessage = idx > 0 ? (currentSession.messages || [])[idx - 1] : undefined;
                                     const showDateSeparator = idx === 0 || (prevMessage && isDifferentDay(prevMessage.timestamp, message.timestamp));
 
                                     return (
