@@ -175,16 +175,16 @@ function SignupContent() {
                                 <>
                                     {/* Name Field */}
                                     <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Full Name</label>
-                                        <div className={`relative transition-all duration-300 ${focusedField === 'name' ? 'scale-[1.02]' : ''}`}>
-                                            <User className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${focusedField === 'name' ? 'text-teal-600' : 'text-slate-400'}`} />
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Full Name</label>
+                                        <div className={`relative transition-all duration-300 ${focusedField === 'name' ? 'scale-[1.01]' : ''}`}>
+                                            <User className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 z-10 pointer-events-none transition-colors duration-300 ${focusedField === 'name' ? 'text-emerald-500' : 'text-slate-400'}`} />
                                             <input
                                                 type="text"
                                                 value={name}
                                                 onChange={(e) => setName(e.target.value)}
                                                 onFocus={() => setFocusedField('name')}
                                                 onBlur={() => setFocusedField(null)}
-                                                className="input-field"
+                                                className="input-field !pl-12"
                                                 placeholder="John Doe"
                                                 required
                                             />
@@ -193,16 +193,16 @@ function SignupContent() {
 
                                     {/* Email Field */}
                                     <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Email</label>
-                                        <div className={`relative transition-all duration-300 ${focusedField === 'email' ? 'scale-[1.02]' : ''}`}>
-                                            <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${focusedField === 'email' ? 'text-teal-600' : 'text-slate-400'}`} />
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Email</label>
+                                        <div className={`relative transition-all duration-300 ${focusedField === 'email' ? 'scale-[1.01]' : ''}`}>
+                                            <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 z-10 pointer-events-none transition-colors duration-300 ${focusedField === 'email' ? 'text-emerald-500' : 'text-slate-400'}`} />
                                             <input
                                                 type="email"
                                                 value={email}
                                                 onChange={(e) => setEmail(e.target.value)}
                                                 onFocus={() => setFocusedField('email')}
                                                 onBlur={() => setFocusedField(null)}
-                                                className="input-field"
+                                                className="input-field !pl-12"
                                                 placeholder="name@example.com"
                                                 required
                                             />
@@ -211,16 +211,16 @@ function SignupContent() {
 
                                     {/* Password Field */}
                                     <div className="space-y-2">
-                                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Password</label>
-                                        <div className={`relative transition-all duration-300 ${focusedField === 'password' ? 'scale-[1.02]' : ''}`}>
-                                            <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${focusedField === 'password' ? 'text-teal-600' : 'text-slate-400'}`} />
+                                        <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Password</label>
+                                        <div className={`relative transition-all duration-300 ${focusedField === 'password' ? 'scale-[1.01]' : ''}`}>
+                                            <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 z-10 pointer-events-none transition-colors duration-300 ${focusedField === 'password' ? 'text-emerald-500' : 'text-slate-400'}`} />
                                             <input
                                                 type="password"
                                                 value={password}
                                                 onChange={(e) => setPassword(e.target.value)}
                                                 onFocus={() => setFocusedField('password')}
                                                 onBlur={() => setFocusedField(null)}
-                                                className="input-field"
+                                                className="input-field !pl-12"
                                                 placeholder="••••••••"
                                                 required
                                             />
@@ -231,9 +231,9 @@ function SignupContent() {
 
                             {step === 'OTP' && (
                                 <div className="space-y-2">
-                                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 ml-1">Verification Code</label>
-                                    <div className={`relative transition-all duration-300 ${focusedField === 'otp' ? 'scale-[1.02]' : ''}`}>
-                                        <Shield className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 transition-colors duration-300 ${focusedField === 'otp' ? 'text-teal-600' : 'text-slate-400'}`} />
+                                    <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 ml-1">Verification Code</label>
+                                    <div className={`relative transition-all duration-300 ${focusedField === 'otp' ? 'scale-[1.01]' : ''}`}>
+                                        <Shield className={`absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 z-10 pointer-events-none transition-colors duration-300 ${focusedField === 'otp' ? 'text-emerald-500' : 'text-slate-400'}`} />
                                         <input
                                             type="text"
                                             value={otp}
@@ -249,7 +249,7 @@ function SignupContent() {
                                     <button
                                         type="button"
                                         onClick={() => setStep('DETAILS')}
-                                        className="text-xs text-teal-600 hover:text-teal-700 dark:text-teal-400 dark:hover:text-teal-300"
+                                        className="text-xs text-emerald-600 hover:text-emerald-700 dark:text-emerald-400 dark:hover:text-emerald-300 font-medium"
                                     >
                                         Change email or details
                                     </button>

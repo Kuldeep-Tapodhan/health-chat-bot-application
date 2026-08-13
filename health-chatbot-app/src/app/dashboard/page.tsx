@@ -214,8 +214,7 @@ export default function DashboardPage() {
                             <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{user?.displayName || 'User'}</p>
                         </div>
                         <div className="flex items-center gap-4">
-
-                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-teal-500 to-electric-blue flex items-center justify-center text-white font-bold shadow-lg shadow-teal-500/25 hover:shadow-teal-500/40 transition-all duration-300 hover:scale-105 cursor-pointer">
+                            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500 to-indigo-600 flex items-center justify-center text-white font-bold shadow-lg shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-300 hover:scale-105 cursor-pointer">
                                 <a href="/profile">
                                     {user?.displayName?.charAt(0) || 'U'}
                                 </a>
@@ -228,9 +227,9 @@ export default function DashboardPage() {
                     {/* Stats Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                         {[
-                            { label: t('dashboard.stats.chats'), value: stats.chats.value, icon: MessageSquare, gradient: 'from-blue-500 to-cyan-500', delta: `+${stats.chats.delta}`, color: '#3b82f6', sparkData: generateWeeklyData(stats.chats.value || 5) },
-                            { label: t('dashboard.stats.reports'), value: stats.reports.value, icon: FileText, gradient: 'from-purple-500 to-pink-500', delta: `+${stats.reports.delta}`, color: '#a855f7', sparkData: generateWeeklyData(stats.reports.value || 3) },
-                            { label: t('dashboard.stats.hospitals'), value: stats.hospitals.value, icon: MapPin, gradient: 'from-teal-500 to-emerald-500', delta: `+${stats.hospitals.delta}`, color: '#14b8a6', sparkData: generateWeeklyData(2) }
+                            { label: t('dashboard.stats.chats'), value: stats.chats.value, icon: MessageSquare, gradient: 'from-emerald-500 to-teal-500', delta: `+${stats.chats.delta}`, color: '#10b981', sparkData: generateWeeklyData(stats.chats.value || 5) },
+                            { label: t('dashboard.stats.reports'), value: stats.reports.value, icon: FileText, gradient: 'from-indigo-500 to-purple-600', delta: `+${stats.reports.delta}`, color: '#6366f1', sparkData: generateWeeklyData(stats.reports.value || 3) },
+                            { label: t('dashboard.stats.hospitals'), value: stats.hospitals.value, icon: MapPin, gradient: 'from-teal-500 to-cyan-500', delta: `+${stats.hospitals.delta}`, color: '#14b8a6', sparkData: generateWeeklyData(2) }
                         ].map((stat, idx) => (
                             <div
                                 key={idx}
@@ -240,7 +239,7 @@ export default function DashboardPage() {
                                     <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center text-white shadow-lg`}>
                                         <stat.icon className="w-6 h-6" />
                                     </div>
-                                    <div className="flex items-center gap-1 text-xs font-medium text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-500/10 px-2.5 py-1 rounded-full border border-teal-100 dark:border-teal-500/20">
+                                    <div className="flex items-center gap-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-1 rounded-full border border-emerald-100 dark:border-emerald-500/20">
                                         <TrendingUp className="w-3 h-3" />
                                         {stat.delta} {t('dashboard.stats.this_week')}
                                     </div>
@@ -255,7 +254,7 @@ export default function DashboardPage() {
                     {/* Quick Actions */}
                     <div>
                         <div className="flex items-center gap-2 mb-5">
-                            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-teal-500 to-electric-blue flex items-center justify-center">
+                            <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-emerald-500 to-indigo-600 flex items-center justify-center">
                                 <Sparkles className="w-3.5 h-3.5 text-white" />
                             </div>
                             <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('dashboard.quick_actions.title')}</h2>
@@ -267,12 +266,12 @@ export default function DashboardPage() {
                                     onClick={() => router.push(action.href)}
                                     className={`group glass-card p-6 text-left transition-all duration-300 ${action.glowClass}`}
                                 >
-                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-teal-600 to-electric-blue flex items-center justify-center text-white mb-5 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
+                                    <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-indigo-600 flex items-center justify-center text-white mb-5 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500">
                                         <action.icon className="w-7 h-7" />
                                     </div>
-                                    <h3 className="font-bold text-slate-900 dark:text-white mb-1 text-lg group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors duration-300">{action.title}</h3>
+                                    <h3 className="font-bold text-slate-900 dark:text-white mb-1 text-lg group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-300">{action.title}</h3>
                                     <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">{action.description}</p>
-                                    <div className="flex items-center gap-1 text-sm font-semibold text-teal-600 dark:text-teal-400 group-hover:gap-2 transition-all duration-300">
+                                    <div className="flex items-center gap-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400 group-hover:gap-2 transition-all duration-300">
                                         {t('dashboard.quick_actions.get_started')}
                                         <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-300" />
                                     </div>
@@ -290,7 +289,7 @@ export default function DashboardPage() {
                             </div>
                             <button
                                 onClick={() => router.push('/activity')}
-                                className="text-sm text-teal-600 dark:text-teal-400 font-medium hover:text-teal-700 dark:hover:text-teal-300 transition-colors duration-300"
+                                className="text-sm text-emerald-600 dark:text-emerald-400 font-medium hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors duration-300"
                             >
                                 {t('dashboard.recent_activity.view_all')}
                             </button>
@@ -316,11 +315,11 @@ export default function DashboardPage() {
                                         onClick={() => router.push(item.type === 'chat' ? '/chat' : '/reports')}
                                         className="flex items-center gap-4 p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all duration-300 group cursor-pointer border border-transparent hover:border-slate-100 dark:hover:border-white/5"
                                     >
-                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-teal-500/10 to-blue-500/10 dark:from-teal-500/20 dark:to-blue-500/20 border border-teal-100 dark:border-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:border-teal-200 dark:group-hover:border-teal-500/30 transition-all duration-300">
-                                            <item.icon className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/10 to-indigo-500/10 dark:from-emerald-500/20 dark:to-indigo-500/20 border border-emerald-100 dark:border-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:border-emerald-200 dark:group-hover:border-emerald-500/30 transition-all duration-300">
+                                            <item.icon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <h4 className="font-semibold text-slate-900 dark:text-white group-hover:text-teal-600 dark:group-hover:text-teal-400 transition-colors duration-300">{item.title}</h4>
+                                            <h4 className="font-semibold text-slate-900 dark:text-white group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors duration-300">{item.title}</h4>
                                             <p className="text-sm text-slate-600 dark:text-slate-400 mt-0.5 truncate">{item.desc}</p>
                                         </div>
                                         <span className="text-xs text-slate-400 flex-shrink-0 tabular-nums">{item.time}</span>
