@@ -5,13 +5,13 @@ services:
     container_name: health_ai_postgres
     restart: unless-stopped
     environment:
-      POSTGRES_DB: health_db
-      POSTGRES_USER: health_user
-      POSTGRES_PASSWORD: health_pass
+      POSTGRES_DB: ${POSTGRES_DB:-health_db}
+      POSTGRES_USER: ${POSTGRES_USER:-health_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-health_pass}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U health_user -d health_db"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-health_user} -d ${POSTGRES_DB:-health_db}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -24,11 +24,11 @@ services:
     container_name: health_ai_backend
     restart: unless-stopped
     ports:
-      - "8001:8001"
+      - "${BACKEND_PORT:-8001}:8001"
     env_file:
       - ./backend_fastapi/.env
     environment:
-      DATABASE_URL: postgresql://health_user:health_pass@postgres:5432/health_db
+      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-health_user}:${POSTGRES_PASSWORD:-health_pass}@postgres:5432/${POSTGRES_DB:-health_db}}
     volumes:
       - chroma_db_data:/app/chroma_db
       - sqlite_db_data:/app/data
@@ -48,13 +48,13 @@ services:
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://169.58.108.90:8001}
-        NEXT_PUBLIC_APPWRITE_ENDPOINT: ${NEXT_PUBLIC_APPWRITE_ENDPOINT:-https://nyc.cloud.appwrite.io/v1}
-        NEXT_PUBLIC_APPWRITE_PROJECT_ID: ${NEXT_PUBLIC_APPWRITE_PROJECT_ID:-69370a87002fd794bb2c}
-        NEXT_PUBLIC_APPWRITE_DATABASE_ID: ${NEXT_PUBLIC_APPWRITE_DATABASE_ID:-693718fa0035792b67ac}
+        NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
     container_name: health_ai_frontend
     restart: unless-stopped
     ports:
-      - "3003:3003"
+      - "${FRONTEND_PORT:-3003}:3003"
+    env_file:
+      - ./health-chatbot-app/.env
     depends_on:
       backend:
         condition: service_healthy
