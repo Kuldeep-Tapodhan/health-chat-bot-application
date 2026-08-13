@@ -36,10 +36,9 @@ async def ingest_document(file_path: str) -> int:
     # Add to Vector Store
     vectorstore = get_vectorstore()
     vectorstore.add_documents(chunks)
-    vectorstore.persist()
     
     return len(chunks)
 
 def get_retriever():
     vectorstore = get_vectorstore()
-    return vectorstore.as_retriever(search_kwargs={"k": 100})
+    return vectorstore.as_retriever(search_kwargs={"k": 10})

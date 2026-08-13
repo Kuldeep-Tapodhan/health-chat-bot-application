@@ -1,5 +1,6 @@
-const API_BASE_URL = (process.env as any).NEXT_PUBLIC_API_URL 
-    ? `${(process.env as any).NEXT_PUBLIC_API_URL}/api` 
+const envApiUrl = (process.env as any).NEXT_PUBLIC_API_URL;
+const API_BASE_URL = envApiUrl 
+    ? (envApiUrl.endsWith('/api') ? envApiUrl : `${envApiUrl}/api`) 
     : 'http://localhost:8001/api';
 
 interface RequestOptions extends RequestInit {
@@ -89,10 +90,10 @@ class ApiClient {
     }
 
     // Chat endpoints
-    async sendMessage(message: string, sessionId: string, token?: string) {
+    async sendMessage(message: string, sessionId: string, history: any[] = [], token?: string) {
         return this.request<any>('/chat/query', {
             method: 'POST',
-            body: JSON.stringify({ text: message, history: [] }),
+            body: JSON.stringify({ text: message, history }),
             token
         });
     }

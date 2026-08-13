@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from services.database import get_db_connection
 import sqlite3
 from datetime import datetime
+import json
 
 router = APIRouter()
 
@@ -27,10 +28,10 @@ def get_alerts(userId: str = Query(...)):
             sub = dict(row)
             # Parse states from string to list
             if sub["states"]:
-                # Simple parsing assuming format like ["State 1", "State 2"]
-                # For safety, let's just evaluate it or replace
-                states_str = sub["states"].replace('[', '').replace(']', '').replace("'", "").replace('"', "")
-                sub["states"] = [s.strip() for s in states_str.split(',')] if states_str else []
+                try:
+                    sub["states"] = json.loads(sub["states"])
+                except Exception:
+                    sub["states"] = []
             else:
                 sub["states"] = []
                 
@@ -51,7 +52,7 @@ def save_alert(subscription: AlertSubscription = Body(...)):
     cursor = conn.cursor()
     try:
         now = datetime.now().isoformat()
-        states_str = str(subscription.states)
+        states_str = json.dumps(subscription.states)
         
         # Upsert
         cursor.execute("SELECT id FROM alert_subscriptions WHERE user_id = ?", (subscription.userId,))

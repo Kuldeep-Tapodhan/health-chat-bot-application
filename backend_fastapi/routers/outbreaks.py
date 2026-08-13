@@ -7,7 +7,7 @@ router = APIRouter()
 
 @router.get("/")
 def get_outbreaks(
-    type: str = Query(..., description="Type of data requested: states, districts, diseases, deaths, mapdata, table"),
+    data_type: str = Query(..., alias="type", description="Type of data requested: states, districts, diseases, deaths, mapdata, table"),
     state: Optional[str] = None,
     search: Optional[str] = None,
     page: int = 1,
@@ -43,7 +43,7 @@ def get_outbreaks(
         search_params = [search_pattern, search_pattern, search_pattern, search_pattern]
 
     try:
-        if type == "states":
+        if data_type == "states":
             query = f"""
                 SELECT state_ut as name, COUNT(*) as count 
                 FROM outbreaks 
@@ -55,7 +55,7 @@ def get_outbreaks(
             data = [dict(row) for row in cursor.fetchall()]
             return data
             
-        elif type == "districts":
+        elif data_type == "districts":
             if not state:
                 return []
             query = f"""
@@ -69,7 +69,7 @@ def get_outbreaks(
             data = [dict(row) for row in cursor.fetchall()]
             return data
             
-        elif type == "diseases":
+        elif data_type == "diseases":
             if not state:
                 return []
             query = f"""
@@ -83,7 +83,7 @@ def get_outbreaks(
             data = [dict(row) for row in cursor.fetchall()]
             return data
             
-        elif type == "deaths":
+        elif data_type == "deaths":
             query = f"""
                 SELECT state_ut as name, COUNT(*) as count 
                 FROM outbreaks 
@@ -95,9 +95,9 @@ def get_outbreaks(
             data = [dict(row) for row in cursor.fetchall()]
             return data
             
-        elif type == "mapdata":
+        elif data_type == "mapdata":
             query = f"""
-                SELECT state_ut as name, COUNT(*) as count, COUNT(*) as cases, 0 as deaths
+                SELECT state_ut as name, COUNT(*) as count, SUM(cases) as cases, SUM(deaths) as deaths
                 FROM outbreaks 
                 WHERE 1=1 {date_filter_sql}
                 GROUP BY state_ut 
@@ -107,7 +107,7 @@ def get_outbreaks(
             data = [dict(row) for row in cursor.fetchall()]
             return data
             
-        elif type == "table":
+        elif data_type == "table":
             base_query = f"""
                 FROM outbreaks
                 WHERE 1=1 {state_filter_sql} {date_filter_sql} {search_filter_sql}
@@ -136,13 +136,13 @@ def get_outbreaks(
                 "pageSize": pageSize
             }
             
-        elif type == "all_states":
+        elif data_type == "all_states":
             cursor.execute("SELECT DISTINCT state_ut FROM outbreaks ORDER BY state_ut")
             states = [row["state_ut"] for row in cursor.fetchall()]
             return {"states": states}
             
         else:
-            raise HTTPException(status_code=400, detail=f"Unknown type: {type}")
+            raise HTTPException(status_code=400, detail=f"Unknown type: {data_type}")
             
     except sqlite3.Error as e:
         print(f"Database error: {e}")

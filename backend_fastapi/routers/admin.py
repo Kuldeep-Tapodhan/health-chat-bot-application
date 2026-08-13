@@ -8,7 +8,6 @@ from datetime import datetime, timedelta
 
 from services.database import get_db_connection
 from services.auth_service import get_current_admin_user, hash_password
-from langchain_openai import ChatOpenAI
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
 
@@ -29,6 +28,8 @@ def get_admin_stats(admin: dict = Depends(get_current_admin_user)):
     try:
         conn = get_db_connection()
         total_users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).isoformat()
+        active_users = conn.execute("SELECT COUNT(*) FROM users WHERE last_active >= ?", (thirty_days_ago,)).fetchone()[0]
         ai_chats_count = conn.execute("SELECT COUNT(*) FROM ai_chats").fetchone()[0]
         regional_chats_count = conn.execute("SELECT COUNT(*) FROM regional_chats").fetchone()[0]
         total_reports = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0]
@@ -38,7 +39,7 @@ def get_admin_stats(admin: dict = Depends(get_current_admin_user)):
 
         return {
             "totalUsers": total_users,
-            "activeUsers": total_users,
+            "activeUsers": active_users,
             "totalChats": total_chats,
             "totalReports": total_reports,
             "systemHealth": "healthy"
@@ -180,8 +181,8 @@ def create_user(user: UserCreateRequest, admin: dict = Depends(get_current_admin
         now_iso = datetime.utcnow().isoformat()
 
         conn.execute("""
-            INSERT INTO users (id, email, password_hash, name, role, created_at, last_active)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO users (id, email, password_hash, name, role, prefs, created_at, last_active)
+            VALUES (?, ?, ?, ?, ?, '{}', ?, ?)
         """, (user_id, user.email.lower(), hashed_pwd, user.name, user.role, now_iso, now_iso))
         conn.commit()
         conn.close()
@@ -341,6 +342,7 @@ def get_analytics_insights(admin: dict = Depends(get_current_admin_user)):
     Generate AI Daily Briefing based on SQLite stats.
     """
     try:
+        from langchain_openai import ChatOpenAI
         api_key = os.getenv("LIGHTNING_API_KEY")
         if not api_key:
             return {"content": "AI Insights unavailable: API Key missing."}

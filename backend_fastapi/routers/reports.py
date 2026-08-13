@@ -11,7 +11,9 @@ from pydantic import BaseModel
 from typing import List, Dict, Any
 from datetime import datetime
 import uuid
+from fastapi import Depends
 from services.database import get_db_connection
+from services.auth_service import get_current_user
 
 load_dotenv()
 
@@ -175,8 +177,10 @@ class ReportSaveRequest(BaseModel):
     analysis: str
 
 @router.post("/")
-async def save_report(request: ReportSaveRequest):
+async def save_report(request: ReportSaveRequest, user: dict = Depends(get_current_user)):
     """Save a report analysis to the database."""
+    if request.user_id != user["id"]:
+        raise HTTPException(status_code=403, detail="Not authorized to save reports for this user")
     conn = get_db_connection()
     cursor = conn.cursor()
     try:
@@ -196,10 +200,12 @@ async def save_report(request: ReportSaveRequest):
         conn.close()
 
 @router.get("/")
-async def get_reports(user_id: str):
+async def get_reports(user_id: str, user: dict = Depends(get_current_user)):
     """Get all reports for a specific user."""
     if not user_id:
         raise HTTPException(status_code=400, detail="user_id is required")
+    if user_id != user["id"]:
+        raise HTTPException(status_code=403, detail="Not authorized to access reports for this user")
         
     conn = get_db_connection()
     cursor = conn.cursor()

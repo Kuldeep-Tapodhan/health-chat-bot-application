@@ -16,7 +16,9 @@ orjson
 pydantic
 pydantic-core
 pyjwt
+psycopg2-binary
 passlib[bcrypt]
+bcrypt==4.0.1
 asgiref
 anyio
 h11
@@ -35,6 +37,7 @@ langchain-core<0.4.0
 langchain-text-splitters<0.4.0
 langchain-experimental<0.4.0
 langchain-google-genai
+langchain-openai
 langsmith
 
 # =======================

@@ -454,10 +454,12 @@ def find_nearby_hospitals(df, location_query, distance_km):
     a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2
     c = 2 * np.arctan2(np.sqrt(a), np.sqrt(1-a))
     
-    df['distance'] = R * c
+    # Make a copy before modifying to avoid mutating the cached DataFrame
+    df_copy = df.copy()
+    df_copy['distance'] = R * c
     
     # 3. Filter and Sort
-    nearby_df = df[df['distance'] <= distance_km].copy()
+    nearby_df = df_copy[df_copy['distance'] <= distance_km].copy()
     nearby_df = nearby_df.sort_values('distance')
     
     # Round distance to 2 decimal places

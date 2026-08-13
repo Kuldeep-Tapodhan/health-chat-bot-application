@@ -1,4 +1,21 @@
 services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: health_ai_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: health_db
+      POSTGRES_USER: health_user
+      POSTGRES_PASSWORD: health_pass
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U health_user -d health_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # FastAPI Backend Service
   backend:
     build:
@@ -10,9 +27,14 @@ services:
       - "8001:8001"
     env_file:
       - ./backend_fastapi/.env
+    environment:
+      DATABASE_URL: postgresql://health_user:health_pass@postgres:5432/health_db
     volumes:
       - chroma_db_data:/app/chroma_db
       - sqlite_db_data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/"]
       interval: 30s
@@ -25,22 +47,22 @@ services:
       context: ./health-chatbot-app
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://169.58.108.90:8001}
         NEXT_PUBLIC_APPWRITE_ENDPOINT: ${NEXT_PUBLIC_APPWRITE_ENDPOINT:-https://nyc.cloud.appwrite.io/v1}
         NEXT_PUBLIC_APPWRITE_PROJECT_ID: ${NEXT_PUBLIC_APPWRITE_PROJECT_ID:-69370a87002fd794bb2c}
         NEXT_PUBLIC_APPWRITE_DATABASE_ID: ${NEXT_PUBLIC_APPWRITE_DATABASE_ID:-693718fa0035792b67ac}
     container_name: health_ai_frontend
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "3003:3003"
     depends_on:
       backend:
         condition: service_healthy
-
-
 
 volumes:
   chroma_db_data:
     driver: local
   sqlite_db_data:
+    driver: local
+  postgres_data:
     driver: local

@@ -35,6 +35,8 @@ except Exception as e:
     print(f"Error loading hospital data: {e}")
     df_hospitals = pd.DataFrame()
 
+router = APIRouter()
+
 @router.get("", response_model=List[dict])
 async def search_hospitals(
     background_tasks: BackgroundTasks,
