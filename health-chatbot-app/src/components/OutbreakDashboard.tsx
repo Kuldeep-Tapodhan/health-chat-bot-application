@@ -18,7 +18,9 @@ import {
     Flame,
     Download,
     Share2,
-    Maximize2
+    Maximize2,
+    Filter,
+    X
 } from 'lucide-react';
 import {
     StateWiseChart,
@@ -28,6 +30,7 @@ import {
 } from './OutbreakCharts';
 import OutbreakTable from './OutbreakTable';
 import AlertSubscription from './AlertSubscription';
+import ThemeToggle from './ThemeToggle';
 import Sparkline, { generateWeeklyData } from './ui/Sparkline';
 import DateRangeFilter, { DateRange, getDefaultDateRange } from './ui/DateRangeFilter';
 import { apiClient } from '@/lib/api-client';
@@ -58,6 +61,7 @@ export default function OutbreakDashboard() {
     const [loading, setLoading] = useState(true);
     const [states, setStates] = useState<string[]>([]);
     const [selectedState, setSelectedState] = useState('');
+    const [selectedDisease, setSelectedDisease] = useState('All Diseases');
 
     // Chart data
     const [stateWiseData, setStateWiseData] = useState<any[]>([]);
@@ -90,59 +94,59 @@ export default function OutbreakDashboard() {
         return params.toString();
     };
 
-    // Initial load: states list and global charts (with date filter)
+    // Fetch initial list of all states once
     useEffect(() => {
-        const fetchInitialData = async () => {
+        const fetchStatesList = async () => {
+            try {
+                const res = await apiClient.getOutbreaks({ type: 'all_states' });
+                const fetched = res.states || [];
+                const fullStatesList = ['All States', ...fetched.filter((s: string) => s !== 'All States')];
+                setStates(fullStatesList);
+                setSelectedState('All States');
+            } catch (err) {
+                console.error('Failed to fetch states list:', err);
+                setStates(['All States']);
+                setSelectedState('All States');
+            }
+        };
+        fetchStatesList();
+    }, []);
+
+    // Load state, disease & date filtered dashboard metrics (stats, charts, map)
+    useEffect(() => {
+        const fetchDashboardMetrics = async () => {
             try {
                 const params: any = {};
+                if (selectedState && selectedState !== 'All States') {
+                    params.state = selectedState;
+                }
+                if (selectedDisease && selectedDisease !== 'All Diseases') {
+                    params.disease = selectedDisease;
+                }
                 if (dateRange.startDate) params.startDate = dateRange.startDate;
                 if (dateRange.endDate) params.endDate = dateRange.endDate;
 
-                const [statesData, sWiseData, dData, mData] = await Promise.all([
-                    apiClient.getOutbreaks({ type: 'all_states' }),
+                const [statsRes, sWiseData, dWiseData, disWiseData, dData, mData] = await Promise.all([
+                    apiClient.getOutbreaks({ type: 'stats', ...params }),
                     apiClient.getOutbreaks({ type: 'states', ...params }),
+                    apiClient.getOutbreaks({ type: 'districts', ...params }),
+                    apiClient.getOutbreaks({ type: 'diseases', ...params }),
                     apiClient.getOutbreaks({ type: 'deaths', ...params }),
                     apiClient.getOutbreaks({ type: 'mapdata', ...params })
                 ]);
 
-                setStates(statesData.states || []);
+                // Metrics are computed reactively
                 setStateWiseData(Array.isArray(sWiseData) ? sWiseData : []);
+                setDistrictWiseData(Array.isArray(dWiseData) ? dWiseData : []);
+                setDiseaseWiseData(Array.isArray(disWiseData) ? disWiseData : []);
                 setDeathData(Array.isArray(dData) ? dData : []);
                 setMapData(Array.isArray(mData) ? mData : []);
-
-                if (statesData.states?.length > 0 && !selectedState) {
-                    setSelectedState(statesData.states[0]);
-                }
             } catch (error) {
-                console.error('Failed to fetch initial data:', error);
+                console.error('Failed to fetch dashboard metrics:', error);
             }
         };
-        fetchInitialData();
-    }, [dateRange]);
-
-    // Load state-specific data (with date filter)
-    useEffect(() => {
-        if (!selectedState) return;
-
-        const fetchStateData = async () => {
-            try {
-                const params: any = { state: selectedState };
-                if (dateRange.startDate) params.startDate = dateRange.startDate;
-                if (dateRange.endDate) params.endDate = dateRange.endDate;
-
-                const [districtData, diseaseData] = await Promise.all([
-                    apiClient.getOutbreaks({ type: 'districts', ...params }),
-                    apiClient.getOutbreaks({ type: 'diseases', ...params })
-                ]);
-
-                setDistrictWiseData(Array.isArray(districtData) ? districtData : []);
-                setDiseaseWiseData(Array.isArray(diseaseData) ? diseaseData : []);
-            } catch (error) {
-                console.error('Failed to fetch state data:', error);
-            }
-        };
-        fetchStateData();
-    }, [selectedState, dateRange]);
+        fetchDashboardMetrics();
+    }, [selectedState, selectedDisease, dateRange]);
 
     // Load table data (with date filter)
     useEffect(() => {
@@ -153,7 +157,7 @@ export default function OutbreakDashboard() {
                     type: 'table',
                     page: page.toString(),
                     search: tableFilters.search || '',
-                    state: tableFilters.state || '',
+                    state: (tableFilters.state || (selectedState !== 'All States' ? selectedState : '')),
                     district: tableFilters.district || '',
                     disease: tableFilters.disease || ''
                 };
@@ -175,16 +179,17 @@ export default function OutbreakDashboard() {
             }
         };
         fetchTableData();
-    }, [page, tableFilters, dateRange]);
+    }, [page, tableFilters, dateRange, selectedState]);
 
     // Calculate stats
-    const totalOutbreaks = stateWiseData.reduce((acc, curr) => acc + (curr.count || 0), 0);
-    const totalDeaths = deathData.reduce((acc, curr) => acc + (parseInt(curr.count) || 0), 0);
-    const totalCases = mapData.reduce((acc, curr) => acc + (parseInt(curr.cases) || 0), 0);
+    const totalOutbreaks = stateWiseData.reduce((acc: number, curr: any) => acc + (curr.count || 0), 0);
+    const totalDeaths = deathData.reduce((acc: number, curr: any) => acc + (parseInt(curr.deaths || curr.count) || 0), 0);
+    const totalCases = (stateWiseData.length > 0 ? stateWiseData : mapData).reduce((acc: number, curr: any) => acc + (parseInt(curr.cases) || 0), 0);
 
-    // Top 5 Hotspots - use mapData which has cases (patients) count
-    const topHotspots = [...mapData]
-        .sort((a, b) => (parseInt(b.cases) || 0) - (parseInt(a.cases) || 0))
+    // Top 5 Hotspots - use districtWiseData when state is selected, or mapData when All States is selected
+    const hotspotList = (selectedState && selectedState !== 'All States' ? districtWiseData : mapData);
+    const topHotspots = [...hotspotList]
+        .sort((a, b) => (parseInt(b.cases || b.count) || 0) - (parseInt(a.cases || a.count) || 0))
         .slice(0, 5);
 
     // Check if no data available for the selected date range
@@ -202,6 +207,7 @@ export default function OutbreakDashboard() {
                 </div>
 
                 <div className="flex items-center gap-3">
+                    <ThemeToggle compact={true} />
                     <button
                         onClick={() => window.location.reload()}
                         className="p-2 hover:bg-slate-100 dark:hover:bg-white/5 rounded-lg transition-all"
@@ -216,23 +222,72 @@ export default function OutbreakDashboard() {
                     >
                         <Bell className="w-5 h-5 text-slate-400/80" />
                     </button>
-                    <div className="h-8 w-px bg-slate-200 dark:bg-white/10 hidden md:block" />
-                    <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-white/10 px-4 py-2 rounded-xl shadow-sm">
-                        <Map className="w-4 h-4 text-teal-500" />
-                        <span className="text-sm font-medium text-slate-700 dark:text-slate-200">State View:</span>
-                        <select
-                            value={selectedState}
-                            onChange={(e) => setSelectedState(e.target.value)}
-                            className="text-sm bg-transparent outline-none font-semibold text-slate-900 dark:text-white dark:bg-slate-900 cursor-pointer"
-                        >
-                            {states.map(s => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                    </div>
                 </div>
             </header>
 
-            {/* Date Range Filter */}
-            <div className="bg-white dark:bg-[#0c1424] p-4 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm animate-fade-in-up">
+            {/* Prominent Left-Aligned Filter Toolbar */}
+            <div className="bg-white dark:bg-[#0c1424] p-4 rounded-2xl border border-slate-200 dark:border-white/5 shadow-sm animate-fade-in-up space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-4">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="flex items-center gap-2 text-slate-700 dark:text-slate-200 font-semibold text-sm">
+                            <Filter className="w-4 h-4 text-teal-500" />
+                            <span>Dashboard Filters:</span>
+                        </div>
+
+                        {/* State Filter Dropdown */}
+                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 px-3 py-2 rounded-xl shadow-xs">
+                            <MapPin className="w-4 h-4 text-teal-500" />
+                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">State:</span>
+                            <select
+                                value={selectedState}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setSelectedState(val);
+                                    setTableFilters(prev => ({ ...prev, state: val === 'All States' ? '' : val }));
+                                }}
+                                className="text-sm bg-transparent outline-none font-semibold text-slate-900 dark:text-white dark:bg-slate-900 cursor-pointer"
+                            >
+                                {states.map(s => <option key={s} value={s}>{s}</option>)}
+                            </select>
+                        </div>
+
+                        {/* Disease Filter Dropdown */}
+                        <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-white/10 px-3 py-2 rounded-xl shadow-xs">
+                            <Activity className="w-4 h-4 text-blue-500" />
+                            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Disease:</span>
+                            <select
+                                value={selectedDisease}
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setSelectedDisease(val);
+                                    setTableFilters(prev => ({ ...prev, disease: val === 'All Diseases' ? '' : val }));
+                                }}
+                                className="text-sm bg-transparent outline-none font-semibold text-slate-900 dark:text-white dark:bg-slate-900 cursor-pointer"
+                            >
+                                {['All Diseases', 'Dengue', 'Chikungunya', 'Nipah virus', 'Cholera', 'Malaria', 'Typhoid'].map(d => (
+                                    <option key={d} value={d}>{d}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Reset All Filters Button */}
+                    {(selectedState !== 'All States' || selectedDisease !== 'All Diseases' || dateRange.preset !== 'all') && (
+                        <button
+                            onClick={() => {
+                                setSelectedState('All States');
+                                setSelectedDisease('All Diseases');
+                                setDateRange({ startDate: null, endDate: null, preset: 'all' });
+                                setTableFilters({ search: '', state: '', district: '', disease: '' });
+                            }}
+                            className="text-xs font-medium text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                            Reset All Filters
+                        </button>
+                    )}
+                </div>
+
                 <DateRangeFilter dateRange={dateRange} onChange={setDateRange} />
             </div>
 
@@ -361,19 +416,35 @@ export default function OutbreakDashboard() {
 
             {/* Charts Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <ChartWrapper title="State-wise Outbreak Count" icon={<BarChart3 className="w-5 h-5" />} delay="0.3s">
+                <ChartWrapper
+                    title={!selectedState || selectedState === 'All States' ? "Top Affected States (Nationwide)" : `Outbreak Statistics in ${selectedState}`}
+                    icon={<BarChart3 className="w-5 h-5" />}
+                    delay="0.3s"
+                >
                     <StateWiseChart data={stateWiseData} />
                 </ChartWrapper>
 
-                <ChartWrapper title="State vs Total Deaths" icon={<BarChart3 className="w-5 h-5" />} delay="0.35s">
+                <ChartWrapper
+                    title={!selectedState || selectedState === 'All States' ? "State vs Total Deaths (Nationwide)" : `District Deaths in ${selectedState}`}
+                    icon={<BarChart3 className="w-5 h-5" />}
+                    delay="0.35s"
+                >
                     <DeathsByStateChart data={deathData} />
                 </ChartWrapper>
 
-                <ChartWrapper title={`Districts in ${selectedState}`} icon={<BarChart3 className="w-5 h-5" />} delay="0.4s">
+                <ChartWrapper
+                    title={!selectedState || selectedState === 'All States' ? "Top Affected Districts (Nationwide)" : `District Breakdown in ${selectedState}`}
+                    icon={<BarChart3 className="w-5 h-5" />}
+                    delay="0.4s"
+                >
                     <DistrictWiseChart data={districtWiseData} state={selectedState} />
                 </ChartWrapper>
 
-                <ChartWrapper title={`Disease Distribution in ${selectedState}`} icon={<PieChartIcon className="w-5 h-5" />} delay="0.45s">
+                <ChartWrapper
+                    title={!selectedState || selectedState === 'All States' ? "Disease Distribution (Nationwide)" : `Disease Distribution in ${selectedState}`}
+                    icon={<PieChartIcon className="w-5 h-5" />}
+                    delay="0.45s"
+                >
                     <DiseaseDistributionChart data={diseaseWiseData} />
                 </ChartWrapper>
             </div>

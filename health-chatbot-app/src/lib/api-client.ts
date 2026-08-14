@@ -254,6 +254,35 @@ class ApiClient {
         });
     }
 
+    async getOutbreakDetails(canonicalId: string, token?: string) {
+        return this.request<any>(`/outbreaks/details/${canonicalId}`, {
+            method: 'GET',
+            token
+        });
+    }
+
+    async getOutbreakStats(token?: string) {
+        return this.request<any>(`/outbreaks?type=stats`, {
+            method: 'GET',
+            token
+        });
+    }
+
+    // Official Government Sources endpoints
+    async getSources(token?: string) {
+        return this.request<{ sources: any[]; total: number }>('/sources', {
+            method: 'GET',
+            token
+        });
+    }
+
+    async getSourcesHealth(token?: string) {
+        return this.request<{ status: string; sources_monitored: number; sources: any[] }>('/sources/health', {
+            method: 'GET',
+            token
+        });
+    }
+
     // Alerts endpoints
     async getAlerts(userId: string, token?: string) {
         return this.request<{ subscriptions?: any[] }>(`/alerts?userId=${userId}`, {

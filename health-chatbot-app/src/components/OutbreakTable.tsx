@@ -94,21 +94,21 @@ export default function OutbreakTable({
                 <table className="w-full text-left text-sm border-collapse">
                     <thead className="sticky top-0 bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium z-10">
                         <tr>
-                            <th className="px-4 py-3 border-b border-slate-200 dark:border-white/5">Unique ID</th>
+                            <th className="px-4 py-3 border-b border-slate-200 dark:border-white/5">Canonical ID</th>
                             <th className="px-4 py-3 border-b border-slate-200 dark:border-white/5">State/UT</th>
                             <th className="px-4 py-3 border-b border-slate-200 dark:border-white/5">District</th>
                             <th className="px-4 py-3 border-b border-slate-200 dark:border-white/5">Disease</th>
                             <th className="px-4 py-3 border-b border-slate-200 dark:border-white/5">Cases</th>
                             <th className="px-4 py-3 border-b border-slate-200 dark:border-white/5">Deaths</th>
-                            <th className="px-4 py-3 border-b border-slate-200 dark:border-white/5">Start Date</th>
-                            <th className="px-4 py-3 border-b border-slate-200 dark:border-white/5">Status</th>
+                            <th className="px-4 py-3 border-b border-slate-200 dark:border-white/5">Verification Status</th>
+                            <th className="px-4 py-3 border-b border-slate-200 dark:border-white/5">Government Source</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-white/5">
                         {data.length > 0 ? (
-                            data.map((record, index) => (
-                                <tr key={`${index}-${record.unique_id}`} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
-                                    <td className="px-4 py-3 font-mono text-xs text-slate-500">{record.unique_id}</td>
+                            data.map((record: any, index) => (
+                                <tr key={`${index}-${record.unique_id || record.canonical_id}`} className="hover:bg-slate-50 dark:hover:bg-white/5 transition-colors">
+                                    <td className="px-4 py-3 font-mono text-xs text-slate-500">{record.unique_id || record.canonical_id}</td>
                                     <td className="px-4 py-3 font-medium">{record.state_ut}</td>
                                     <td className="px-4 py-3">{record.district}</td>
                                     <td className="px-4 py-3">
@@ -116,16 +116,32 @@ export default function OutbreakTable({
                                             {record.disease_illness}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-3">{record.cases}</td>
+                                    <td className="px-4 py-3 font-medium">{record.cases}</td>
                                     <td className="px-4 py-3 text-red-500 font-medium">{record.deaths}</td>
-                                    <td className="px-4 py-3 text-slate-500">{record.date_start}</td>
                                     <td className="px-4 py-3">
-                                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${record.current_status.toLowerCase().includes('ongoing')
-                                            ? 'bg-amber-50 dark:bg-amber-500/10 text-amber-600'
-                                            : 'bg-green-50 dark:bg-green-500/10 text-green-600'
-                                            }`}>
-                                            {record.current_status}
+                                        <span className={`px-2.5 py-1 rounded-full text-xs font-semibold inline-flex items-center gap-1 ${
+                                            (record.verification_status || '').includes('CONFIRMED')
+                                                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
+                                                : (record.verification_status || '').includes('UNVERIFIED')
+                                                ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                                                : 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-300 dark:border-blue-700'
+                                        }`}>
+                                            🛡️ {record.verification_status || 'OFFICIAL_REPORTED'}
                                         </span>
+                                    </td>
+                                    <td className="px-4 py-3">
+                                        {record.source_url ? (
+                                            <a
+                                                href={record.source_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-teal-600 dark:text-teal-400 hover:underline text-xs font-medium inline-flex items-center gap-1"
+                                            >
+                                                🏛️ {record.source_name || 'Official Gov Report'} ↗
+                                            </a>
+                                        ) : (
+                                            <span className="text-xs text-slate-400">Integrated IDSP</span>
+                                        )}
                                     </td>
                                 </tr>
                             ))

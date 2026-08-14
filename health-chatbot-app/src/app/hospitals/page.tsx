@@ -99,9 +99,11 @@ export default function HospitalsPage() {
     const listTopRef = useRef<HTMLDivElement>(null);
     const nextPageTokenRef = useRef<google.maps.places.PlaceSearchPagination | null>(null);
 
+    const mapsApiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
+
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+        googleMapsApiKey: mapsApiKey,
         libraries,
     });
 

@@ -28,6 +28,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+from routers import ingest, chat, speech, translate_v2 as translate, reports, admin, notifications, hospitals, auth, outbreaks, alerts, sources, pending_reviews
+
 # Include Routers
 app.include_router(ingest.router, prefix="/api/ingest", tags=["Ingestion"])
 app.include_router(chat.router, prefix="/api/chat", tags=["Chat"])
@@ -37,6 +39,8 @@ app.include_router(reports.router, prefix="/api/reports", tags=["Reports"])
 app.include_router(hospitals.router, prefix="/api/hospitals", tags=["Hospitals"])
 app.include_router(notifications.router, prefix="/api/notifications", tags=["Notifications"])
 app.include_router(outbreaks.router, prefix="/api/outbreaks", tags=["Outbreaks"])
+app.include_router(sources.router, prefix="/api/sources", tags=["Government Sources"])
+app.include_router(pending_reviews.router, prefix="/api/admin/pending_reviews", tags=["Human Verification Queue"])
 app.include_router(alerts.router, prefix="/api/alerts", tags=["Alerts"])
 app.include_router(auth.router) # Prefix is handled in auth.py
 app.include_router(admin.router) # Prefix is handled in admin.py

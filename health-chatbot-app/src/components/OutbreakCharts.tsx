@@ -109,7 +109,7 @@ export const StateWiseChart = ({ data }: { data: ChartData[] }) => {
         .slice(0, 10);
 
     return (
-        <div className="h-[300px] w-full">
+        <div className="h-[300px] w-full min-h-[300px] min-w-[200px]">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={100}>
                 <BarChart data={sortedData} margin={{ top: 10, right: 20, left: 10, bottom: 60 }}>
                     <defs>
@@ -158,7 +158,7 @@ export const DistrictWiseChart = ({ data, state }: { data: ChartData[], state: s
         .slice(0, 10);
 
     return (
-        <div className="h-[300px] w-full">
+        <div className="h-[300px] w-full min-h-[300px] min-w-[200px]">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={100}>
                 <BarChart data={sortedData} layout="vertical" margin={{ top: 10, right: 30, left: 80, bottom: 10 }}>
                     <defs>
@@ -233,7 +233,7 @@ export const DiseaseDistributionChart = ({ data }: { data: ChartData[] }) => {
     };
 
     return (
-        <div className="h-[300px] w-full">
+        <div className="h-[300px] w-full min-h-[300px] min-w-[200px]">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={100}>
                 <PieChart>
                     <defs>
@@ -287,7 +287,7 @@ export const DeathsByStateChart = ({ data }: { data: ChartData[] }) => {
     }
 
     return (
-        <div className="h-[300px] w-full">
+        <div className="h-[300px] w-full min-h-[300px] min-w-[200px]">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={100}>
                 <BarChart data={sortedData} margin={{ top: 10, right: 20, left: 10, bottom: 60 }}>
                     <defs>

@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import ThemeToggle from './ThemeToggle';
 
 
 export default function Sidebar() {
@@ -143,6 +144,7 @@ export default function Sidebar() {
 
                 {/* Footer */}
                 <div className="p-4 border-t border-slate-200/80 dark:border-white/10">
+                    <ThemeToggle />
                     <Link
                         href="/profile"
                         onClick={closeMobile}
@@ -213,6 +215,7 @@ export default function Sidebar() {
 
                 {/* Footer */}
                 <div className="p-4 border-t border-slate-200/80 dark:border-white/10">
+                    <ThemeToggle />
                     <Link
                         href="/profile"
                         className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 mb-2 ${pathname === '/profile'

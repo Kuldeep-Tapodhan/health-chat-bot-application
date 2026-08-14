@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer theme {
   :root {
     /* Executive Bio-Tech Emerald & Indigo Sapphire Palette */

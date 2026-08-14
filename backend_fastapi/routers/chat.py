@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 from services.rag_service import get_retriever
 from services.data_service import list_csvs, get_csv_path
+from services.outbreak_rag_helper import is_outbreak_query, get_outbreak_surveillance_context
 
 from langchain.chains.retrieval import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
@@ -110,7 +111,34 @@ async def chat_endpoint(request: ChatRequest):
     intent = "general"
     location_query = ""
     distance_km = 5.0
-    
+
+    # 1. Check for Direct Outbreak Surveillance Queries against Official Database
+    if is_outbreak_query(request.text):
+        outbreak_context = get_outbreak_surveillance_context(request.text)
+        if outbreak_context:
+            outbreak_prompt = f"""
+            You are an official Public Health Surveillance AI Assistant. Answer the user question based on the official government surveillance data provided below.
+
+            CRITICAL FORMATTING RULES:
+            1. Base your answer strictly on the official government surveillance records provided.
+            2. Present outbreak data using a clean Markdown Table with columns:
+               | Canonical ID | Disease | State / District | Cases | Deaths | Verification Status | Source Reference |
+            3. Include verification badges (e.g., 🛡️ OFFICIAL_CONFIRMED or 🛡️ OFFICIAL_REPORTED).
+            4. Provide clickable links to original government source URL references.
+            5. Highlight key response actions taken by health authorities.
+
+            OFFICIAL GOVERNMENT SURVEILLANCE DATA:
+            {outbreak_context}
+
+            User Question: {request.text}
+            """
+            try:
+                outbreak_response = await run_in_threadpool(llm.invoke, outbreak_prompt)
+                if outbreak_response and outbreak_response.content:
+                    return ChatResponse(message=outbreak_response.content)
+            except Exception as err:
+                print(f"Outbreak Chat Handler Error: {err}")
+
     # Simple Router Logic
     is_data_query = any(keyword in query for keyword in ["chart", "plot", "graph", "trend", "analysis", "csv", "data", "hospital", "find", "location", "search", "list", "near"])
 

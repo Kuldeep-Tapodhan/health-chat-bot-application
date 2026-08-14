@@ -1,22 +1,5 @@
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:16-alpine
-    container_name: health_ai_postgres
-    restart: unless-stopped
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB:-health_db}
-      POSTGRES_USER: ${POSTGRES_USER:-health_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-health_pass}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-health_user} -d ${POSTGRES_DB:-health_db}"]
-      interval: 5m
-      timeout: 5s
-      retries: 5
-
-  # FastAPI Backend Service
+  # FastAPI Backend Service (Using SQLite)
   backend:
     build:
       context: ./backend_fastapi
@@ -28,17 +11,14 @@ services:
     env_file:
       - ./backend_fastapi/.env
     environment:
-      DATABASE_URL: ${DATABASE_URL:-postgresql://${POSTGRES_USER:-health_user}:${POSTGRES_PASSWORD:-health_pass}@postgres:5432/${POSTGRES_DB:-health_db}}
+      DATABASE_URL: ""
     volumes:
       - chroma_db_data:/app/chroma_db
       - sqlite_db_data:/app/data
-    depends_on:
-      postgres:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/"]
-      interval: 5m
-      timeout: 10s
+      interval: 10s
+      timeout: 5s
       retries: 3
 
   # Next.js Frontend Service
@@ -47,7 +27,7 @@ services:
       context: ./health-chatbot-app
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://169.58.108.90:8001}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8001}
         NEXT_PUBLIC_GOOGLE_MAPS_API_KEY: ${NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
     container_name: health_ai_frontend
     restart: unless-stopped
@@ -63,6 +43,4 @@ volumes:
   chroma_db_data:
     driver: local
   sqlite_db_data:
-    driver: local
-  postgres_data:
     driver: local
