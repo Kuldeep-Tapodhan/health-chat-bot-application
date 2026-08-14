@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { API_BASE_URL } from '@/lib/api-client';
+import { API_BASE_URL, getAuthHeaders } from '@/lib/api-client';
 import {
     Users,
     LayoutDashboard,
@@ -118,7 +118,9 @@ export default function AdminDashboard() {
 
     const fetchDocuments = async () => {
         try {
-            const response = await fetch(`${API_BASE_URL}/ingest/files`);
+            const response = await fetch(`${API_BASE_URL}/ingest/files`, {
+                headers: getAuthHeaders()
+            });
             if (response.ok) {
                 const data = await response.json();
                 setDocuments(data);
@@ -131,16 +133,17 @@ export default function AdminDashboard() {
     const fetchDashboardData = async () => {
         setDashboardLoading(true);
         try {
+            const headers = getAuthHeaders();
             const [statsRes, activityRes, growthRes, usageRes, keywordsRes, usersRes, heatmapRes, insightsRes, effectRes] = await Promise.all([
-                fetch(`${API_BASE_URL}/admin/stats`),
-                fetch(`${API_BASE_URL}/admin/activity?limit=50`),
-                fetch(`${API_BASE_URL}/admin/users/growth`),
-                fetch(`${API_BASE_URL}/admin/analytics/usage`),
-                fetch(`${API_BASE_URL}/admin/analytics/keywords`),
-                fetch(`${API_BASE_URL}/admin/analytics/users`),
-                fetch(`${API_BASE_URL}/admin/analytics/heatmap`),
-                fetch(`${API_BASE_URL}/admin/analytics/insights`),
-                fetch(`${API_BASE_URL}/admin/analytics/effectiveness`)
+                fetch(`${API_BASE_URL}/admin/stats`, { headers }),
+                fetch(`${API_BASE_URL}/admin/activity?limit=50`, { headers }),
+                fetch(`${API_BASE_URL}/admin/users/growth`, { headers }),
+                fetch(`${API_BASE_URL}/admin/analytics/usage`, { headers }),
+                fetch(`${API_BASE_URL}/admin/analytics/keywords`, { headers }),
+                fetch(`${API_BASE_URL}/admin/analytics/users`, { headers }),
+                fetch(`${API_BASE_URL}/admin/analytics/heatmap`, { headers }),
+                fetch(`${API_BASE_URL}/admin/analytics/insights`, { headers }),
+                fetch(`${API_BASE_URL}/admin/analytics/effectiveness`, { headers })
             ]);
 
             if (statsRes.ok) setStats(await statsRes.json());
@@ -195,6 +198,7 @@ export default function AdminDashboard() {
         try {
             const response = await fetch(`${API_BASE_URL}/ingest/upload`, {
                 method: 'POST',
+                headers: getAuthHeaders(),
                 body: formData,
             });
 
@@ -215,6 +219,7 @@ export default function AdminDashboard() {
         try {
             const response = await fetch(`${API_BASE_URL}/ingest/files/${filename}`, {
                 method: 'DELETE',
+                headers: getAuthHeaders(),
             });
             if (response.ok) fetchDocuments();
             else alert('Failed to delete file');

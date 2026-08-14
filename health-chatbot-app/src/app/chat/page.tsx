@@ -92,7 +92,7 @@ export default function ChatPage() {
     const [translatedContent, setTranslatedContent] = useState<Record<number, string>>({});
     const [isTranslating, setIsTranslating] = useState(false);
 
-    // Load sessions from Appwrite on mount
+    // Load sessions from API on mount
     useEffect(() => {
         if (!user) return;
 

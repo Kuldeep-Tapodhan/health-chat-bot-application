@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Search, ChevronLeft, ChevronRight, MoreVertical, Shield, Ban, CheckCircle, Plus, X, Loader2, Trash2 } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { API_BASE_URL } from '@/lib/api-client';
+import { API_BASE_URL, getAuthHeaders } from '@/lib/api-client';
 
 interface User {
     uid: string;
@@ -47,7 +47,9 @@ export default function UserTable({ refreshTrigger }: UserTableProps) {
         setLoading(true);
         try {
             const offset = page * LIMIT;
-            const res = await fetch(`${API_BASE_URL}/admin/users?limit=${LIMIT}&offset=${offset}`);
+            const res = await fetch(`${API_BASE_URL}/admin/users?limit=${LIMIT}&offset=${offset}`, {
+                headers: getAuthHeaders()
+            });
 
             if (res.ok) {
                 const data = await res.json();
@@ -90,7 +92,7 @@ export default function UserTable({ refreshTrigger }: UserTableProps) {
         try {
             const res = await fetch(`${API_BASE_URL}/admin/users`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify(newUser)
             });
 
@@ -116,7 +118,7 @@ export default function UserTable({ refreshTrigger }: UserTableProps) {
         try {
             const res = await fetch(`${API_BASE_URL}/admin/users/${userId}/role`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
                 body: JSON.stringify({ role: newRole })
             });
 
@@ -145,6 +147,7 @@ export default function UserTable({ refreshTrigger }: UserTableProps) {
         try {
             const res = await fetch(`${API_BASE_URL}/admin/users/${userId}`, {
                 method: 'DELETE',
+                headers: getAuthHeaders()
             });
 
             if (!res.ok) {

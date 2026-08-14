@@ -73,13 +73,20 @@ async def list_files():
 
 @router.delete("/files/{filename}")
 async def delete_file(filename: str):
-    """Delete an uploaded file."""
+    """Delete an uploaded file and its vector embeddings."""
     file_path = os.path.join(UPLOAD_DIR, filename)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found")
     
     try:
         os.remove(file_path)
+        
+        # Also delete from ChromaDB if it's a vector-stored file
+        file_extension = filename.split(".")[-1].lower() if "." in filename else ""
+        if file_extension in ["pdf", "txt"]:
+            from services.rag_service import delete_document
+            delete_document(file_path)
+            
         return {"message": f"File {filename} deleted successfully"}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error deleting file: {str(e)}")

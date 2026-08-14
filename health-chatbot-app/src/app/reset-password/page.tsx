@@ -2,8 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
+import { apiClient } from '@/lib/api-client';
 
 export default function ResetPasswordPage() {
     const [email, setEmail] = useState('');
@@ -18,10 +17,10 @@ export default function ResetPasswordPage() {
         setLoading(true);
 
         try {
-            await sendPasswordResetEmail(auth, email);
-            setMessage('Check your email for password reset instructions.');
+            await apiClient.sendOtp(email, 'User');
+            setMessage('Verification code sent to your email. Check your inbox.');
         } catch (err: any) {
-            setError('Failed to send reset email. ' + err.message);
+            setError(err.message || 'Failed to send reset code.');
             console.error(err);
         } finally {
             setLoading(false);

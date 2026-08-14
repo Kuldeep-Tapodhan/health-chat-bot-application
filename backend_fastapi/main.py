@@ -14,9 +14,15 @@ from services.auth_service import hash_password
 app = FastAPI(title="Data-Aware RAG System API")
 
 # CORS Configuration — allow all origins permissively
+cors_origins_str = os.getenv("CORS_ORIGINS", "*")
+if cors_origins_str.strip() == "*":
+    cors_origins = ["*"]
+else:
+    cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=cors_origins,
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -40,37 +46,10 @@ app.include_router(admin.router) # Prefix is handled in admin.py
 async def root():
     return {"message": "Data-Aware RAG System API is running"}
 
-def get_ngrok_url():
-    """
-    Check local ngrok API to find public URL.
-    """
-    try:
-        import requests
-        # ngrok's local API
-        response = requests.get("http://127.0.0.1:4040/api/tunnels", timeout=1)
-        if response.status_code == 200:
-            data = response.json()
-            tunnels = data.get("tunnels", [])
-            for tunnel in tunnels:
-                # Find tunnel pointing to our port
-                if tunnel.get("config", {}).get("addr", "").endswith("8001"):
-                    return tunnel.get("public_url")
-    except:
-        pass
-    return None
-
 @app.on_event("startup")
 async def startup_event():
     print("\n" + "="*50)
-    print(f"🚀 API Running on: http://127.0.0.1:8001")
-    
-    # Try to find ngrok URL
-    public_url = get_ngrok_url()
-    if public_url:
-        print(f"🌍 Public Access:  {public_url}")
-        print(f"🔗 Swagger UI:     {public_url}/docs")
-    else:
-        print("🌍 Public Access:  Not detected (Ngrok not running?)")
+    print(f"🚀 API Running on port 8001")
     
     # Check and create Super Admin
     super_admin_email = os.getenv("SUPER_ADMIN_EMAIL")

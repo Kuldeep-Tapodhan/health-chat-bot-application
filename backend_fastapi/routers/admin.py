@@ -55,13 +55,13 @@ def get_recent_activity(limit: int = 10, admin: dict = Depends(get_current_admin
         activity = []
 
         # AI Chats
-        ai_rows = conn.execute("SELECT id, title, created_at FROM ai_chats ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+        ai_rows = conn.execute("SELECT c.id, c.title, c.created_at, u.name as user_name FROM ai_chats c LEFT JOIN users u ON c.user_id = u.id ORDER BY c.created_at DESC LIMIT ?", (limit,)).fetchall()
         for r in ai_rows:
             activity.append({
                 "id": r["id"],
                 "type": "chat",
                 "action": "New AI Chat",
-                "user": "User",
+                "user": r["user_name"] or "Unknown User",
                 "timestamp": r["created_at"],
                 "details": r["title"] or "Untitled Chat"
             })
@@ -69,13 +69,13 @@ def get_recent_activity(limit: int = 10, admin: dict = Depends(get_current_admin
 
 
         # Reports
-        rep_rows = conn.execute("SELECT id, title, timestamp FROM reports ORDER BY timestamp DESC LIMIT ?", (limit,)).fetchall()
+        rep_rows = conn.execute("SELECT r.id, r.title, r.timestamp, u.name as user_name FROM reports r LEFT JOIN users u ON r.user_id = u.id ORDER BY r.timestamp DESC LIMIT ?", (limit,)).fetchall()
         for r in rep_rows:
             activity.append({
                 "id": r["id"],
                 "type": "report",
                 "action": "Report Analyzed",
-                "user": "User",
+                "user": r["user_name"] or "Unknown User",
                 "timestamp": r["timestamp"],
                 "details": r["title"] or "Medical Report"
             })
@@ -106,7 +106,7 @@ def get_user_growth(admin: dict = Depends(get_current_admin_user)):
         conn.close()
 
         for u in users:
-            reg_date = u["created_at"].split('T')[0]
+            reg_date = u["created_at"].split('T')[0] if 'T' in u["created_at"] else u["created_at"].split()[0]
             if reg_date in growth_map:
                 growth_map[reg_date] += 1
 
@@ -277,23 +277,26 @@ def get_analytics_users_detailed(limit: int = 20, admin: dict = Depends(get_curr
     """
     try:
         conn = get_db_connection()
-        users = conn.execute("SELECT * FROM users ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+        users = conn.execute("""
+            SELECT u.id, u.name, u.email, u.created_at, u.role,
+                   (SELECT COUNT(*) FROM ai_chats WHERE user_id = u.id) as chats,
+                   (SELECT COUNT(*) FROM reports WHERE user_id = u.id) as reports,
+                   (SELECT COUNT(*) FROM search_logs WHERE user_id = u.id) as searches
+            FROM users u
+            ORDER BY u.created_at DESC
+            LIMIT ?
+        """, (limit,)).fetchall()
 
         detailed_users = []
         for u in users:
-            uid = u["id"]
-            ai_c = conn.execute("SELECT COUNT(*) FROM ai_chats WHERE user_id = ?", (uid,)).fetchone()[0]
-            rep_c = conn.execute("SELECT COUNT(*) FROM reports WHERE user_id = ?", (uid,)).fetchone()[0]
-            s_c = conn.execute("SELECT COUNT(*) FROM search_logs WHERE user_id = ?", (uid,)).fetchone()[0]
-
             detailed_users.append({
-                "id": uid,
+                "id": u["id"],
                 "name": u["name"],
                 "email": u["email"],
                 "joined": u["created_at"],
-                "chats": ai_c,
-                "reports": rep_c,
-                "searches": s_c,
+                "chats": u["chats"],
+                "reports": u["reports"],
+                "searches": u["searches"],
                 "role": u["role"]
             })
 

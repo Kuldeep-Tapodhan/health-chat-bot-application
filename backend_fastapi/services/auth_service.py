@@ -64,19 +64,12 @@ def get_current_user(credentials: Optional[HTTPAuthorizationCredentials] = Depen
             headers={"WWW-Authenticate": "Bearer"},
         )
     
-    user_id = payload["sub"]
-    
-    conn = get_db_connection()
-    user = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
-    conn.close()
-    
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User no longer exists",
-        )
-    
-    return dict(user)
+    # Trust the JWT for basic identity to avoid DB hits on every protected route.
+    return {
+        "id": payload["sub"],
+        "email": payload.get("email", ""),
+        "role": payload.get("role", "user")
+    }
 
 def get_current_admin_user(current_user: dict = Depends(get_current_user)) -> dict:
     """FastAPI Dependency to enforce admin role."""

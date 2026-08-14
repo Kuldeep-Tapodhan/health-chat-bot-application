@@ -44,9 +44,7 @@ This document lists all the library dependencies used in the Health-Assistance p
 | `@google/generative-ai` | ^0.24.1 | Google Gemini client |
 | `@heroicons/react` | ^2.2.0 | Icon library |
 | `@types/jspdf` | ^1.3.3 | jsPDF type definitions |
-| `appwrite` | ^21.5.0 | Backend-as-a-Service |
 | `clsx` | ^2.1.1 | Conditional classNames |
-| `firebase` | ^12.6.0 | Firebase SDK |
 | `jspdf` | ^3.0.4 | PDF generation |
 | `lucide-react` | ^0.555.0 | Icon library |
 | `next` | 16.0.6 | React framework |

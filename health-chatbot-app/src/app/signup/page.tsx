@@ -62,7 +62,7 @@ function SignupContent() {
             // 1. Verify OTP
             await apiClient.verifyOtp(email, otp);
 
-            // 2. Create Account (Appwrite)
+            // 2. Create Account (Backend API)
             await signup(email, password, name);
 
             router.push('/dashboard');

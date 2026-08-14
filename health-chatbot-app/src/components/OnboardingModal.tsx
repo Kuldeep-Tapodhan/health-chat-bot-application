@@ -44,7 +44,7 @@ export default function OnboardingModal() {
             // Update language context immediately for feedback
             setLanguage(selectedLang);
 
-            // Save to Appwrite
+            // Save to database
             await updatePreferences({
                 language: selectedLang,
                 onboardingCompleted: true
