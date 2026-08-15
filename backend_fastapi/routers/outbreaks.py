@@ -22,12 +22,24 @@ def get_outbreaks(
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    # Build date & state filters
-    date_filter_sql = ""
+    # Build date & state filters with multi-column fallback
+    date_conditions = []
     date_params = []
-    if startDate and endDate:
-        date_filter_sql = " AND (outbreak_start_date >= ? AND outbreak_start_date <= ?)"
-        date_params = [startDate, endDate]
+
+    clean_start_date = startDate.split("T")[0] if startDate else None
+    clean_end_date = endDate.split("T")[0] if endDate else None
+
+    if clean_start_date:
+        date_conditions.append("COALESCE(NULLIF(outbreak_start_date, ''), NULLIF(first_reported_date, ''), created_at) >= ?")
+        date_params.append(clean_start_date)
+
+    if clean_end_date:
+        date_conditions.append("COALESCE(NULLIF(outbreak_start_date, ''), NULLIF(first_reported_date, ''), created_at) <= ?")
+        date_params.append(clean_end_date)
+
+    date_filter_sql = ""
+    if date_conditions:
+        date_filter_sql = " AND " + " AND ".join(date_conditions)
 
     state_filter_sql = ""
     state_params = []

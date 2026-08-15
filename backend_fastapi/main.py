@@ -50,6 +50,27 @@ app.include_router(admin.router) # Prefix is handled in admin.py
 async def root():
     return {"message": "Data-Aware RAG System API is running"}
 
+import asyncio
+from services.gov_data_sync_service import sync_live_government_data
+
+async def daily_government_data_sync():
+    """
+    Background worker that runs daily to sync government outbreak data directly
+    from api.data.gov.in and official IDSP reports without hardcoding.
+    """
+    await asyncio.sleep(3)
+    
+    while True:
+        try:
+            print("\n🌐 Running Daily Live Government Outbreak Data Sync...")
+            res = sync_live_government_data()
+            print(f"✅ Live Government Data Sync completed successfully! Summary: {res}")
+        except Exception as sync_err:
+            print(f"❌ Error during daily government data sync: {sync_err}")
+            
+        # Sleep for 24 hours (86,400 seconds)
+        await asyncio.sleep(86400)
+
 @app.on_event("startup")
 async def startup_event():
     print("\n" + "="*50)
@@ -74,5 +95,8 @@ async def startup_event():
             """, (user_id, super_admin_email.lower(), hashed_pwd, "Super Admin", "admin", default_prefs, now_iso, now_iso))
             conn.commit()
         conn.close()
+
+    # Launch live government data sync and daily background scheduler
+    asyncio.create_task(daily_government_data_sync())
 
     print("="*50 + "\n")
