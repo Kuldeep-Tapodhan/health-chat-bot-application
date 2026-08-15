@@ -92,29 +92,51 @@ def get_recent_activity(limit: int = 10, admin: dict = Depends(get_current_admin
 @router.get("/users/growth")
 def get_user_growth(admin: dict = Depends(get_current_admin_user)):
     """
-    Get user registration growth over last 7 days from SQLite.
+    Get user registration growth over last 7 days from database.
+    Computes cumulative user growth along with daily new user signups.
     """
     try:
         conn = get_db_connection()
+        users = conn.execute("SELECT created_at FROM users").fetchall()
+        conn.close()
+
+        # Last 7 days map
         growth_map = {}
-        for i in range(7):
+        for i in range(6, -1, -1):
             d = (datetime.utcnow() - timedelta(days=i)).strftime('%Y-%m-%d')
             growth_map[d] = 0
 
-        seven_days_ago = (datetime.utcnow() - timedelta(days=7)).isoformat()
-        users = conn.execute("SELECT created_at FROM users WHERE created_at >= ?", (seven_days_ago,)).fetchall()
-        conn.close()
+        min_date = min(growth_map.keys())
+        baseline_users = 0
 
         for u in users:
-            reg_date = u["created_at"].split('T')[0] if 'T' in u["created_at"] else u["created_at"].split()[0]
-            if reg_date in growth_map:
+            raw_ts = u["created_at"] or ""
+            reg_date = ""
+            if "T" in raw_ts:
+                reg_date = raw_ts.split("T")[0]
+            elif " " in raw_ts:
+                reg_date = raw_ts.split(" ")[0]
+            else:
+                reg_date = raw_ts[:10]
+
+            if reg_date < min_date:
+                baseline_users += 1
+            elif reg_date in growth_map:
                 growth_map[reg_date] += 1
 
         result = []
+        cumulative = baseline_users
         for date_str in sorted(growth_map.keys()):
+            new_users = growth_map[date_str]
+            cumulative += new_users
             dt = datetime.strptime(date_str, '%Y-%m-%d')
             day_name = dt.strftime('%a')
-            result.append({"name": day_name, "value": growth_map[date_str], "date": date_str})
+            result.append({
+                "name": day_name,
+                "value": cumulative,
+                "daily": new_users,
+                "date": date_str
+            })
 
         return result
 
@@ -125,7 +147,7 @@ def get_user_growth(admin: dict = Depends(get_current_admin_user)):
 @router.get("/users")
 def get_all_users(limit: int = 10, offset: int = 0, admin: dict = Depends(get_current_admin_user)):
     """
-    Get paginated list of users from SQLite.
+    Get paginated list of users from database.
     """
     try:
         conn = get_db_connection()
@@ -185,7 +207,7 @@ def create_user(user: UserCreateRequest, admin: dict = Depends(get_current_admin
 @router.put("/users/{user_id}/role")
 def update_user_role(user_id: str, request: RoleUpdateRequest, admin: dict = Depends(get_current_admin_user)):
     """
-    Update user role in SQLite.
+    Update user role in database.
     """
     if request.role not in ['admin', 'user']:
         raise HTTPException(status_code=400, detail="Invalid role. Must be 'admin' or 'user'")
@@ -200,7 +222,7 @@ def update_user_role(user_id: str, request: RoleUpdateRequest, admin: dict = Dep
 @router.delete("/users/{user_id}")
 def delete_user(user_id: str, admin: dict = Depends(get_current_admin_user)):
     """
-    Delete user and associated data from SQLite.
+    Delete user and associated data from database.
     """
     try:
         conn = get_db_connection()
@@ -219,13 +241,13 @@ def delete_user(user_id: str, admin: dict = Depends(get_current_admin_user)):
 @router.get("/analytics/usage")
 def get_analytics_usage(admin: dict = Depends(get_current_admin_user)):
     """
-    Get usage breakdown for charts from SQLite.
+    Get usage breakdown for charts from database.
     """
     try:
         conn = get_db_connection()
-        ai_val = conn.execute("SELECT COUNT(*) FROM ai_chats").fetchone()[0]
-        rep_val = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0]
-        search_count = conn.execute("SELECT COUNT(*) FROM search_logs").fetchone()[0]
+        ai_val = conn.execute("SELECT COUNT(*) FROM ai_chats").fetchone()[0] or 0
+        rep_val = conn.execute("SELECT COUNT(*) FROM reports").fetchone()[0] or 0
+        search_count = conn.execute("SELECT COUNT(*) FROM search_logs").fetchone()[0] or 0
         conn.close()
 
         return [
@@ -235,33 +257,43 @@ def get_analytics_usage(admin: dict = Depends(get_current_admin_user)):
         ]
     except Exception as e:
         print(f"Analytics Usage Error: {e}")
-        return []
+        return [
+            {"name": "AI Chat", "value": 0},
+            {"name": "Reports Analysis", "value": 0},
+            {"name": "Hospital Search", "value": 0}
+        ]
 
 @router.get("/analytics/keywords")
 def get_analytics_keywords(admin: dict = Depends(get_current_admin_user)):
     """
-    Aggregate top keywords from search_logs in SQLite.
+    Aggregate top keywords from search_logs and ai_chats in database.
     """
     try:
         conn = get_db_connection()
-        rows = conn.execute("SELECT query, city FROM search_logs ORDER BY timestamp DESC LIMIT 100").fetchall()
+        search_rows = conn.execute("SELECT query, city FROM search_logs ORDER BY timestamp DESC LIMIT 100").fetchall()
+        chat_rows = conn.execute("SELECT title FROM ai_chats ORDER BY created_at DESC LIMIT 100").fetchall()
         conn.close()
 
         keywords_map = {}
-        for r in rows:
+        for r in search_rows:
             q = (r["query"] or "").strip().lower()
             if q: keywords_map[q] = keywords_map.get(q, 0) + 1
             c = (r["city"] or "").strip().lower()
             if c: keywords_map[c] = keywords_map.get(c, 0) + 1
 
+        for r in chat_rows:
+            t = (r["title"] or "").strip()
+            if t and t.lower() != "untitled chat":
+                keywords_map[t] = keywords_map.get(t, 0) + 1
+
         sorted_kws = sorted(keywords_map.items(), key=lambda x: x[1], reverse=True)[:10]
 
         if not sorted_kws:
             return [
-                {"name": "Cardiologist", "value": 45},
-                {"name": "Fever", "value": 32},
-                {"name": "Mumbai", "value": 28},
-                {"name": "Diabetes", "value": 25}
+                {"name": "General Consultation", "value": 45},
+                {"name": "Fever & Symptoms", "value": 32},
+                {"name": "Blood Report", "value": 28},
+                {"name": "Diabetes Care", "value": 25}
             ]
 
         return [{"name": k, "value": v} for k, v in sorted_kws]

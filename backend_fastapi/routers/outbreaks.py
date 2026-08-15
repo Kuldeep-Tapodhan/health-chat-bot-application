@@ -116,7 +116,7 @@ def get_outbreaks(
         elif data_type == "deaths":
             if state:
                 query = f"""
-                    SELECT district as name, SUM(total_deaths) as deaths, COUNT(*) as outbreak_count
+                    SELECT district as name, SUM(total_deaths) as deaths, COUNT(*) as count, COUNT(*) as outbreak_count
                     FROM canonical_outbreaks 
                     WHERE total_deaths > 0 {state_filter_sql} {disease_filter_sql} {date_filter_sql}
                     GROUP BY district 
@@ -125,7 +125,7 @@ def get_outbreaks(
                 cursor.execute(query, state_params + disease_params + date_params)
             else:
                 query = f"""
-                    SELECT state as name, SUM(total_deaths) as deaths, COUNT(*) as outbreak_count
+                    SELECT state as name, SUM(total_deaths) as deaths, COUNT(*) as count, COUNT(*) as outbreak_count
                     FROM canonical_outbreaks 
                     WHERE total_deaths > 0 {date_filter_sql}
                     GROUP BY state 
