@@ -7,6 +7,7 @@ import OnboardingModal from "@/components/OnboardingModal";
 import ToastProvider from "@/components/ui/ToastProvider";
 import { KeyboardShortcutsProvider } from "@/components/ui/KeyboardShortcuts";
 import { AccessibilityProvider } from "@/components/ui/AccessibilityProvider";
+import PageTransition from "@/components/ui/PageTransition";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -63,8 +64,12 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.ico', sizes: 'any' },
+    ],
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
   },
 };
 
@@ -82,7 +87,9 @@ export default function RootLayout({
           <AccessibilityProvider>
             <KeyboardShortcutsProvider>
               <LanguageProvider>
-                {children}
+                <PageTransition>
+                  {children}
+                </PageTransition>
                 <OnboardingModal />
                 <ToastProvider />
               </LanguageProvider>

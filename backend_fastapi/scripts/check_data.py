@@ -1,35 +1,29 @@
 import os
-from appwrite.client import Client
-from appwrite.services.databases import Databases
+import sys
 
-# Config
-PROJECT_ID = '69370a87002fd794bb2c'
-API_KEY = os.getenv('APPWRITE_API_KEY')
-DATABASE_ID = '693718fa0035792b67ac'
-ENDPOINT = 'https://nyc.cloud.appwrite.io/v1'
+# Add parent directory to path to import services
+current_dir = os.path.dirname(os.path.abspath(__file__))
+parent_dir = os.path.dirname(current_dir)
+sys.path.append(parent_dir)
 
-SEARCH_LOGS_COLLECTION = 'search_logs'
-CHATS_COLLECTION = 'ai_chats'
+from services.database import get_db_connection
 
-if not API_KEY:
-    print("Error: API Key missing")
-    exit(1)
+def check_db():
+    conn = get_db_connection()
+    try:
+        tables = ["users", "ai_chats", "reports", "otp_verifications", "search_logs", "outbreaks", "alert_subscriptions"]
+        print("📊 PostgreSQL / Database Table Record Counts:")
+        print("=" * 45)
+        for table in tables:
+            try:
+                row = conn.execute(f"SELECT COUNT(*) as count FROM {table}").fetchone()
+                count = row["count"] if row else 0
+                print(f"  • {table:<22}: {count} records")
+            except Exception as e:
+                print(f"  • {table:<22}: Table missing or error ({e})")
+        print("=" * 45)
+    finally:
+        conn.close()
 
-client = Client()
-client.set_endpoint(ENDPOINT)
-client.set_project(PROJECT_ID)
-client.set_key(API_KEY)
-
-databases = Databases(client)
-
-try:
-    searches = databases.list_documents(DATABASE_ID, SEARCH_LOGS_COLLECTION)
-    print(f"Search Logs: {searches['total']}")
-except Exception as e:
-    print(f"Error checking searches: {e}")
-
-try:
-    chats = databases.list_documents(DATABASE_ID, CHATS_COLLECTION)
-    print(f"Chats: {chats['total']}")
-except Exception as e:
-    print(f"Error checking chats: {e}")
+if __name__ == "__main__":
+    check_db()

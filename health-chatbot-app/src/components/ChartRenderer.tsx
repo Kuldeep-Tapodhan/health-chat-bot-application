@@ -83,7 +83,7 @@ const ChartRenderer: React.FC<ChartRendererProps> = ({ data }) => {
                             fill="#14b8a6"
                             radius={[4, 4, 0, 0]}
                         >
-                            {data.data.map((_, index) => (
+                            {chartData.map((_, index) => (
                                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                             ))}
                         </Bar>

@@ -1,5 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, Body
-from fastapi.responses import FileResponse
+from fastapi import APIRouter, UploadFile, File, HTTPException, Body, Response
 from services.speech_service import transcribe_audio, generate_speech_async
 import shutil
 import os
@@ -9,7 +8,7 @@ router = APIRouter()
 @router.post("/stt")
 async def speech_to_text(file: UploadFile = File(...), language: str = "en-in"):
     """
-    Convert uploaded audio file to text.
+    Convert uploaded audio file to text via Sarvam AI STT (saarika:v1).
     """
     temp_filename = f"temp_{file.filename}"
     try:
@@ -26,12 +25,27 @@ async def speech_to_text(file: UploadFile = File(...), language: str = "en-in"):
             os.remove(temp_filename)
 
 @router.post("/tts")
-async def text_to_speech(text: str = Body(..., embed=True), language: str = Body("en-in", embed=True)):
+async def text_to_speech(
+    text: str = Body(..., embed=True),
+    language: str = Body("en-in", embed=True),
+    speaker: str = Body("ritu", embed=True),
+    pace: float = Body(1.0, embed=True)
+):
     """
-    Convert text to audio file (async for faster response).
+    Convert text to natural audio using Sarvam AI TTS (bulbul:v3).
     """
     try:
-        file_path = await generate_speech_async(text, language)
-        return FileResponse(file_path, media_type="audio/mpeg", filename="speech.mp3")
+        audio_bytes = await generate_speech_async(text, language, speaker, pace)
+        if audio_bytes:
+            return Response(content=audio_bytes, media_type="audio/wav")
+        else:
+            raise HTTPException(
+                status_code=503,
+                detail="Sarvam TTS generation returned empty audio output."
+            )
+    except HTTPException:
+        raise
     except Exception as e:
+        print(f"❌ TTS Router Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+

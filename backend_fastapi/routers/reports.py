@@ -177,30 +177,31 @@ class ReportSaveRequest(BaseModel):
     analysis: str
 
 @router.post("/")
-async def save_report(request: ReportSaveRequest, user: dict = Depends(get_current_user)):
+def save_report(request: ReportSaveRequest, user: dict = Depends(get_current_user)):
     """Save a report analysis to the database."""
     if request.user_id != user["id"]:
         raise HTTPException(status_code=403, detail="Not authorized to save reports for this user")
+    
     conn = get_db_connection()
-    cursor = conn.cursor()
     try:
         report_id = str(uuid.uuid4())
-        timestamp = datetime.utcnow().isoformat() + "Z"
+        now_iso = datetime.utcnow().isoformat()
         
-        cursor.execute(
-            "INSERT INTO reports (id, user_id, title, analysis, timestamp) VALUES (?, ?, ?, ?, ?)",
-            (report_id, request.user_id, request.title, request.analysis, timestamp)
-        )
+        conn.execute("""
+            INSERT INTO reports (id, user_id, title, analysis, timestamp)
+            VALUES (?, ?, ?, ?, ?)
+        """, (report_id, request.user_id, request.title, request.analysis, now_iso))
         conn.commit()
-        return {"success": True, "report_id": report_id, "timestamp": timestamp}
+        
+        return {"success": True, "report_id": report_id}
     except Exception as e:
-        conn.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+        print(f"Error saving report: {e}")
+        raise HTTPException(status_code=500, detail="Failed to save report")
     finally:
         conn.close()
 
 @router.get("/")
-async def get_reports(user_id: str, user: dict = Depends(get_current_user)):
+def get_reports(user_id: str, user: dict = Depends(get_current_user)):
     """Get all reports for a specific user."""
     if not user_id:
         raise HTTPException(status_code=400, detail="user_id is required")

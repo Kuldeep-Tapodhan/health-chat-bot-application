@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @layer theme {
   :root {
     /* Executive Bio-Tech Emerald & Indigo Sapphire Palette */
@@ -299,7 +301,14 @@
     border-color: rgba(255, 255, 255, 0.1);
   }
 
-  /* Typing indicator */
+  /* Typing & Thinking Indicator */
+  .typing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+  }
+
   .typing-dot {
     width: 8px;
     height: 8px;
@@ -308,12 +317,115 @@
     animation: typing-bounce 1.4s ease-in-out infinite;
   }
 
-  .streaming-cursor::after {
-    content: '▊';
-    display: inline-block;
-    color: #10b981;
-    animation: cursor-blink 0.8s step-end infinite;
-    margin-left: 2px;
+  .typing-dot:nth-child(1) { animation-delay: 0s; }
+  .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+  @keyframes typing-bounce {
+    0%, 60%, 100% {
+      transform: translateY(0);
+      opacity: 0.4;
+    }
+    30% {
+      transform: translateY(-8px);
+      opacity: 1;
+    }
+  }
+
+  @keyframes glow-pulse {
+    0%, 100% {
+      box-shadow: 0 0 15px rgba(16, 185, 129, 0.25), 0 0 30px rgba(99, 102, 241, 0.15);
+      transform: scale(1);
+    }
+    50% {
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.6), 0 0 50px rgba(99, 102, 241, 0.35);
+      transform: scale(1.02);
+    }
+  }
+
+  .animate-glow-pulse {
+    animation: glow-pulse 2s ease-in-out infinite;
+  }
+
+  /* Fade-in-up entrance animation */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Scale-in modal / card animation */
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  /* Shimmer skeleton animation */
+  @keyframes shimmerSweep {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  .animate-shimmer {
+    background: linear-gradient(90deg, rgba(255,255,255,0.03) 20%, rgba(16,185,129,0.15) 50%, rgba(255,255,255,0.03) 80%);
+    background-size: 200% 100%;
+    animation: shimmerSweep 2.2s infinite ease-in-out;
+  }
+
+  /* Subtle floating accent */
+  @keyframes subtleFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  .animate-subtle-float {
+    animation: subtleFloat 4s ease-in-out infinite;
+  }
+
+  /* Stagger Delays */
+  .stagger-1 { animation-delay: 0.08s; }
+  .stagger-2 { animation-delay: 0.16s; }
+  .stagger-3 { animation-delay: 0.24s; }
+  .stagger-4 { animation-delay: 0.32s; }
+
+  /* Route Page Entrance Animation */
+  @keyframes pageEntry {
+    0% {
+      opacity: 0;
+      transform: translateY(10px) scale(0.995);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  .animate-page-entry {
+    animation: pageEntry 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .glow-on-hover-rose:hover {
+    box-shadow: 0 0 30px rgba(251, 113, 133, 0.35);
+    border-color: rgba(251, 113, 133, 0.5);
   }
 
   .btn-secondary {

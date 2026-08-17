@@ -82,6 +82,7 @@ pyasn1-modules
 # =======================
 # Audio / Speech / Media
 # =======================
+sarvamai
 
 # =======================
 # Data Handling

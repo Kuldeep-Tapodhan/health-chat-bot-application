@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { apiClient, API_BASE_URL } from '@/lib/api-client';
 import Sidebar from '@/components/Sidebar';
-import { Send, Bot, User, Sparkles, Plus, Trash2, MessageSquare, Mic, Square, Volume2, Globe, ChevronDown, Check, Clock, Stethoscope, Heart, Brain } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Plus, Trash2, MessageSquare, Mic, Square, Volume2, Globe, ChevronDown, Check, Clock, Stethoscope, Heart, Brain, FileText } from 'lucide-react';
 import MessageRenderer from '@/components/MessageRenderer';
 import toast from 'react-hot-toast';
 import { SkeletonChatMessage } from '@/components/ui/Skeleton';
@@ -92,17 +92,118 @@ export default function ChatPage() {
     const [translatedContent, setTranslatedContent] = useState<Record<number, string>>({});
     const [isTranslating, setIsTranslating] = useState(false);
 
-    // Load sessions from Appwrite on mount
+    // Dynamic Thinking Steps
+    const [thinkingStepIndex, setThinkingStepIndex] = useState(0);
+    const thinkingSteps = [
+        "AI is thinking...",
+        "Analyzing medical context...",
+        "Retrieving health knowledge...",
+        "Formatting clinical guidance..."
+    ];
+
+    useEffect(() => {
+        if (!isTyping) {
+            setThinkingStepIndex(0);
+            return;
+        }
+        const interval = setInterval(() => {
+            setThinkingStepIndex(prev => (prev + 1) % thinkingSteps.length);
+        }, 2200);
+        return () => clearInterval(interval);
+    }, [isTyping]);
+
+    const handleReportFollowUpContext = async (context: { title: string; analysis: string; timestamp?: string }) => {
+        if (!user) return;
+
+        const reportTitle = `Report: ${context.title || 'Medical Analysis'}`;
+        const formattedPrompt = `I would like to follow up on my medical report.\n\n### Report Context (${context.title})\n\n${context.analysis}\n\n---\nPlease review this report, summarize key findings and potential concerns, and offer follow-up guidance or answers to any questions I might have.`;
+
+        const tempSessionId = `temp-${Date.now()}`;
+        const userMsg: Message = {
+            role: 'user',
+            content: formattedPrompt,
+            timestamp: Date.now()
+        };
+
+        const initialSession: ChatSession = {
+            $id: tempSessionId,
+            title: reportTitle,
+            messages: [userMsg],
+            userId: user.uid,
+            createdAt: new Date().toISOString()
+        };
+
+        // Instantly update UI so user sees session and message right away
+        setSessions(prev => [initialSession, ...(prev || []).filter(s => s.$id !== tempSessionId)]);
+        setCurrentSessionId(tempSessionId);
+        setIsTyping(true);
+
+        try {
+            const createRes = await apiClient.createSession(reportTitle, [userMsg]);
+            const realSessionId = (createRes.success && createRes.sessionId) ? createRes.sessionId : tempSessionId;
+
+            if (realSessionId !== tempSessionId) {
+                setCurrentSessionId(realSessionId);
+                setSessions(prev => (prev || []).map(s => s.$id === tempSessionId ? { ...s, $id: realSessionId } : s));
+            }
+
+            // Stream AI response
+            const response = await fetch(`${API_BASE_URL}/chat/stream`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(typeof window !== 'undefined' && localStorage.getItem('token') ? { 'Authorization': `Bearer ${localStorage.getItem('token')}` } : {})
+                },
+                body: JSON.stringify({
+                    message: formattedPrompt,
+                    history: []
+                }),
+            });
+
+            if (!response.ok) throw new Error(`AI Error: ${response.status}`);
+
+            const reader = response.body?.getReader();
+            const decoder = new TextDecoder();
+            let aiResponseContent = '';
+
+            if (reader) {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value, { stream: true });
+                    aiResponseContent += chunk;
+                }
+            }
+
+            const aiMsg: Message = {
+                role: 'assistant',
+                content: aiResponseContent,
+                timestamp: Date.now()
+            };
+
+            const finalMessages = [userMsg, aiMsg];
+            setSessions(prev => (prev || []).map(s => s.$id === realSessionId || s.$id === tempSessionId ? { ...s, $id: realSessionId, messages: finalMessages } : s));
+            await apiClient.updateSession(realSessionId, reportTitle, finalMessages);
+
+        } catch (error: any) {
+            console.error("Error creating report follow-up session", error);
+            toast.error("Could not send report to AI assistant");
+        } finally {
+            setIsTyping(false);
+        }
+    };
+
+    // Load sessions from API on mount
     useEffect(() => {
         if (!user) return;
 
         const fetchSessions = async () => {
+            let loadedSessions: ChatSession[] = [];
             try {
                 const response = await apiClient.getSessions();
-                
                 if (response.success && response.sessions) {
                     // API returns sessions in {id, title, messages, ...}
-                    const loadedSessions = response.sessions.map((doc: any) => {
+                    loadedSessions = response.sessions.map((doc: any) => {
                         let parsedMessages = [];
                         if (typeof doc.messages === 'string') {
                             try {
@@ -123,20 +224,36 @@ export default function ChatPage() {
                     });
 
                     setSessions(loadedSessions);
-
-                    if (loadedSessions.length > 0) {
-                        setCurrentSessionId(loadedSessions[0].$id);
-                    } else {
-                        createNewSession();
-                    }
-                } else {
-                    createNewSession();
                 }
             } catch (err: any) {
                 console.error("Failed to load sessions from API", err);
-                if (!sessions || sessions.length === 0) createNewSession();
+            }
+
+            // Check for pending report context from localStorage or sessionStorage
+            let pendingContextRaw = null;
+            if (typeof window !== 'undefined') {
+                pendingContextRaw = localStorage.getItem('pending_report_context') || sessionStorage.getItem('pending_report_context');
+                localStorage.removeItem('pending_report_context');
+                sessionStorage.removeItem('pending_report_context');
+            }
+
+            if (pendingContextRaw) {
+                try {
+                    const pendingContext = JSON.parse(pendingContextRaw);
+                    await handleReportFollowUpContext(pendingContext);
+                    return;
+                } catch (e) {
+                    console.error("Failed to parse pending report context", e);
+                }
+            }
+
+            if (loadedSessions.length > 0) {
+                setCurrentSessionId(loadedSessions[0].$id);
+            } else {
+                createNewSession();
             }
         };
+
         fetchSessions();
     }, [user]);
 
@@ -578,7 +695,20 @@ export default function ChatPage() {
                             <div>
                                 <h1 className="font-bold text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
                                     {currentSession?.title || t('chat.header.title')}
-                                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
+                                    {currentSession?.title?.startsWith('Report:') && (
+                                        <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                                            <FileText className="w-3 h-3" />
+                                            Report Context
+                                        </span>
+                                    )}
+                                    {isTyping ? (
+                                        <span className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 animate-pulse">
+                                            <Sparkles className="w-3.5 h-3.5 animate-spin text-emerald-500" />
+                                            <span>AI Thinking...</span>
+                                        </span>
+                                    ) : (
+                                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
+                                    )}
                                 </h1>
                                 <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">{t('chat.header.subtitle')}</p>
                             </div>
@@ -678,15 +808,30 @@ export default function ChatPage() {
                                 })}
 
                                 {isTyping && (
-                                    <div className="flex gap-4 justify-start">
-                                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 via-teal-500/20 to-indigo-500/20 border border-emerald-500/30 flex items-center justify-center flex-shrink-0">
-                                            <Bot className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+                                    <div className="flex gap-4 justify-start my-4">
+                                        <div className="relative">
+                                            <div className="absolute -inset-1 rounded-2xl bg-gradient-to-r from-emerald-500 to-indigo-500 opacity-60 blur-sm animate-pulse" />
+                                            <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 via-teal-500 to-indigo-600 flex items-center justify-center flex-shrink-0 shadow-lg ring-2 ring-emerald-500/30">
+                                                <Bot className="w-5 h-5 text-white animate-pulse" />
+                                            </div>
                                         </div>
-                                        <div className="chat-bubble-ai">
-                                            <div className="typing-indicator">
-                                                <div className="typing-dot"></div>
-                                                <div className="typing-dot"></div>
-                                                <div className="typing-dot"></div>
+                                        <div className="chat-bubble-ai border border-emerald-500/30 bg-gradient-to-br from-emerald-500/5 via-teal-500/5 to-indigo-500/5 backdrop-blur-md p-4 rounded-2xl max-w-md shadow-lg shadow-emerald-500/5">
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <Sparkles className="w-4 h-4 text-emerald-500 animate-spin" />
+                                                <span className="text-xs font-bold tracking-wide text-emerald-600 dark:text-emerald-400 transition-all duration-500">
+                                                    {thinkingSteps[thinkingStepIndex]}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-2 mb-3">
+                                                <div className="typing-indicator">
+                                                    <div className="typing-dot" />
+                                                    <div className="typing-dot" />
+                                                    <div className="typing-dot" />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1.5 opacity-60">
+                                                <div className="h-2 w-48 bg-emerald-500/20 dark:bg-white/10 rounded animate-pulse" />
+                                                <div className="h-2 w-32 bg-emerald-500/15 dark:bg-white/5 rounded animate-pulse" />
                                             </div>
                                         </div>
                                     </div>

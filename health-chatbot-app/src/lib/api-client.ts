@@ -1,7 +1,33 @@
-const envApiUrl = (process.env as any).NEXT_PUBLIC_API_URL;
-export const API_BASE_URL = envApiUrl 
-    ? (envApiUrl.endsWith('/api') ? envApiUrl : `${envApiUrl}/api`) 
-    : 'http://localhost:8001/api';
+export function getApiBaseUrl(): string {
+    if (typeof window !== 'undefined') {
+        const envUrl = process.env.NEXT_PUBLIC_API_URL;
+        if (envUrl && envUrl.trim() !== '' && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+            return envUrl.endsWith('/api') ? envUrl : `${envUrl}/api`;
+        }
+        const protocol = window.location.protocol;
+        const hostname = window.location.hostname;
+        return `${protocol}//${hostname}:8001/api`;
+    }
+    const envApiUrl = process.env.NEXT_PUBLIC_API_URL;
+    return envApiUrl 
+        ? (envApiUrl.endsWith('/api') ? envApiUrl : `${envApiUrl}/api`) 
+        : 'http://localhost:8001/api';
+}
+
+export const API_BASE_URL = typeof window !== 'undefined'
+    ? getApiBaseUrl()
+    : (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8001/api');
+
+export function getAuthHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
+    const headers: Record<string, string> = { ...extraHeaders };
+    if (typeof window !== 'undefined') {
+        const token = localStorage.getItem('token');
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+    }
+    return headers;
+}
 
 interface RequestOptions extends RequestInit {
     token?: string;
@@ -23,19 +49,34 @@ class ApiClient {
             headers.set('Authorization', `Bearer ${authToken}`);
         }
 
-        const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-            ...fetchOptions,
-            headers,
-        });
+        const baseUrl = getApiBaseUrl();
 
-        const data = await response.json();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        if (!response.ok) {
-            const errorMsg = data.detail || data.error?.message || 'API request failed';
-            throw new Error(errorMsg);
+        try {
+            const response = await fetch(`${baseUrl}${endpoint}`, {
+                ...fetchOptions,
+                headers,
+                signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                const errorMsg = data.detail || data.error?.message || 'API request failed';
+                throw new Error(errorMsg);
+            }
+
+            return data;
+        } catch (err: any) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') {
+                throw new Error('API Request timed out');
+            }
+            throw err;
         }
-
-        return data;
     }
 
     // Auth endpoints
@@ -157,7 +198,7 @@ class ApiClient {
             headers['Authorization'] = `Bearer ${authToken}`;
         }
 
-        const response = await fetch(`${API_BASE_URL}/reports/analyze`, {
+        const response = await fetch(`${getApiBaseUrl()}/reports/analyze`, {
             method: 'POST',
             headers,
             body: formData
@@ -222,6 +263,35 @@ class ApiClient {
     async getOutbreaks(params: Record<string, string>, token?: string) {
         const queryParams = new URLSearchParams(params).toString();
         return this.request<any>(`/outbreaks?${queryParams}`, {
+            method: 'GET',
+            token
+        });
+    }
+
+    async getOutbreakDetails(canonicalId: string, token?: string) {
+        return this.request<any>(`/outbreaks/details/${canonicalId}`, {
+            method: 'GET',
+            token
+        });
+    }
+
+    async getOutbreakStats(token?: string) {
+        return this.request<any>(`/outbreaks?type=stats`, {
+            method: 'GET',
+            token
+        });
+    }
+
+    // Official Government Sources endpoints
+    async getSources(token?: string) {
+        return this.request<{ sources: any[]; total: number }>('/sources', {
+            method: 'GET',
+            token
+        });
+    }
+
+    async getSourcesHealth(token?: string) {
+        return this.request<{ status: string; sources_monitored: number; sources: any[] }>('/sources/health', {
             method: 'GET',
             token
         });

@@ -12,8 +12,8 @@ export default function ThemeToggle({ compact = false }: { compact?: boolean }) 
     };
 
     const getIcon = () => {
-        if (theme === 'light') return <Sun className="w-5 h-5" />;
-        return <Moon className="w-5 h-5" />;
+        if (theme === 'light') return <Sun className="w-5 h-5 text-amber-500" />;
+        return <Moon className="w-5 h-5 text-teal-400" />;
     };
 
     const getLabel = () => {
@@ -25,11 +25,13 @@ export default function ThemeToggle({ compact = false }: { compact?: boolean }) 
         return (
             <button
                 onClick={cycleTheme}
-                className="p-2 rounded-lg transition-all duration-200 
-                    text-gray-500 dark:text-gray-400 
-                    hover:bg-gray-100 dark:hover:bg-white/5
-                    hover:text-gray-900 dark:hover:text-white"
-                title={`Theme: ${getLabel()}`}
+                className="p-2.5 rounded-xl transition-all duration-200 
+                    bg-slate-100 dark:bg-slate-800/80
+                    border border-slate-200 dark:border-white/10
+                    text-slate-700 dark:text-slate-300 
+                    hover:bg-slate-200 dark:hover:bg-slate-700
+                    hover:text-slate-900 dark:hover:text-white shadow-xs"
+                title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
             >
                 {getIcon()}
             </button>
@@ -40,12 +42,14 @@ export default function ThemeToggle({ compact = false }: { compact?: boolean }) 
         <button
             onClick={cycleTheme}
             className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 
-                text-gray-600 dark:text-gray-400 
-                hover:bg-gray-50 dark:hover:bg-white/5 
-                hover:text-gray-900 dark:hover:text-white"
+                text-slate-700 dark:text-slate-300 
+                bg-slate-100/80 dark:bg-white/5
+                border border-slate-200/80 dark:border-white/10
+                hover:bg-slate-200/80 dark:hover:bg-white/10 
+                hover:text-slate-900 dark:hover:text-white mb-2 shadow-xs cursor-pointer"
         >
             {getIcon()}
-            <span>{getLabel()} Mode</span>
+            <span className="font-semibold">{getLabel()} Mode</span>
         </button>
     );
 }

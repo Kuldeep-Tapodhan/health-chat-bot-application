@@ -79,15 +79,15 @@ export default function DashboardPage() {
                 const chatsRes = await apiClient.getSessions();
                 if (chatsRes.success && chatsRes.sessions) {
                     chatsTotal = chatsRes.sessions.length;
-                    
+
                     const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-                    
+
                     chatsRes.sessions.forEach((chat: any, index: number) => {
                         const chatDateStr = chat.created_at || chat.createdAt;
                         const chatDate = chatDateStr ? new Date(chatDateStr).getTime() : 0;
-                        
+
                         if (chatDate > oneWeekAgo) chatsWeek++;
-                        
+
                         if (index < 5) {
                             activities.push({
                                 id: chat.id || chat.session_id || chat.$id,
@@ -109,15 +109,15 @@ export default function DashboardPage() {
                 const reportsRes = await apiClient.getReports(user.uid);
                 if (reportsRes.success && reportsRes.reports) {
                     reportsTotal = reportsRes.reports.length;
-                    
+
                     const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-                    
+
                     reportsRes.reports.forEach((report: any, index: number) => {
                         const reportDateStr = report.timestamp || report.created_at || report.createdAt;
                         const reportDate = reportDateStr ? new Date(reportDateStr).getTime() : 0;
-                        
+
                         if (reportDate > oneWeekAgo) reportsWeek++;
-                        
+
                         if (index < 5) {
                             activities.push({
                                 id: report.id || report.$id,
@@ -143,7 +143,7 @@ export default function DashboardPage() {
 
             // Sort activities by newest first
             activities.sort((a, b) => new Date(b.time === 'Just now' ? Date.now() : b.time).getTime() - new Date(a.time === 'Just now' ? Date.now() : a.time).getTime());
-            
+
             setRecentActivity(activities.slice(0, 5));
             setActivityLoading(false);
         };
@@ -309,11 +309,12 @@ export default function DashboardPage() {
                                     </div>
                                 ))
                             ) : recentActivity.length > 0 ? (
-                                recentActivity.map((item) => (
+                                recentActivity.map((item, idx) => (
                                     <div
                                         key={item.id}
                                         onClick={() => router.push(item.type === 'chat' ? '/chat' : '/reports')}
-                                        className="flex items-center gap-4 p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all duration-300 group cursor-pointer border border-transparent hover:border-slate-100 dark:hover:border-white/5"
+                                        className="flex items-center gap-4 p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all duration-300 group cursor-pointer border border-transparent hover:border-slate-100 dark:hover:border-white/5 animate-fade-in-up"
+                                        style={{ animationDelay: `${idx * 0.08}s` }}
                                     >
                                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/10 to-indigo-500/10 dark:from-emerald-500/20 dark:to-indigo-500/20 border border-emerald-100 dark:border-white/5 flex items-center justify-center flex-shrink-0 group-hover:scale-110 group-hover:border-emerald-200 dark:group-hover:border-emerald-500/30 transition-all duration-300">
                                             <item.icon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />

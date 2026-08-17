@@ -71,7 +71,7 @@ flowchart TD
 
     subgraph Storage["💾 DATA STORAGE"]
         DB1[("ChromaDB<br/>Vectors")]
-        DB2[("Appwrite<br/>Chat History")]
+        DB2[("PostgreSQL<br/>Chat History")]
         DB3[("CSV Files<br/>Hospital Data")]
         DB4[("Documents<br/>PDFs/TXTs")]
     end
@@ -217,7 +217,7 @@ flowchart LR
         O1["Generate<br/>Response"]
         O2["Translation<br/>(Optional)"]
         O3["Text-to-Speech"]
-        O4["Save to<br/>Appwrite"]
+        O4["Save to<br/>PostgreSQL"]
         O5["👤 Display<br/>to User"]
         
         O1 --> O2
@@ -306,7 +306,7 @@ flowchart TB
 
     subgraph Data["Data Layer"]
         D1["ChromaDB"]
-        D2["Appwrite"]
+        D2["PostgreSQL"]
         D3["CSV Files"]
     end
 
@@ -354,7 +354,7 @@ flowchart TD
 | **Website** | Next.js 14 | React-based frontend with TypeScript |
 | **API Server** | FastAPI | High-performance Python backend |
 | **Vector Database** | ChromaDB | Store and retrieve document embeddings |
-| **User Database** | Appwrite | Chat history and user sessions |
+| **User Database** | PostgreSQL | Chat history and user sessions |
 | **LLM** | Llama 3.3 70B | Primary language model via Lightning AI |
 | **Embeddings** | all-MiniLM-L6-v2 | 384-dimensional sentence embeddings |
 | **Translation** | LLM-based | Multi-language support (Hindi, Gujarati, etc.) |

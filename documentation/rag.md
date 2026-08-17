@@ -78,7 +78,7 @@ flowchart TB
         direction LR
         CHROMA[("ChromaDB<br/>Vector Store")]
         CSV[("CSV Data<br/>Files")]
-        APPWRITE[("Appwrite DB<br/>Chat History")]
+        PG[("PostgreSQL DB<br/>Chat History")]
         DOCS[("PDF/TXT<br/>Documents")]
     end
     
@@ -114,7 +114,7 @@ flowchart TB
     
     LLAMA --> TRANSLATE
     LLAMA --> TTS
-    LLAMA --> APPWRITE
+    LLAMA --> PG
     
     DOCS --> LOADER
 ```
@@ -145,7 +145,7 @@ flowchart TD
 | **Regional Chat** | RAG-based health Q&A with regional language support | ChromaDB, Llama 3.3, Translation API |
 | **AI Chat** | Direct conversation with custom-trained health model | Lightning AI, Custom Model |
 | **Report Analyzer** | OCR-based medical report analysis | Tesseract, Vision Model |
-| **Admin Dashboard** | System monitoring and statistics | Appwrite, FastAPI |
+| **Admin Dashboard** | System monitoring and statistics | PostgreSQL, FastAPI |
 | **Document Ingestion** | Upload and process health documents | PyPDF, LangChain |
 
 ---
@@ -159,7 +159,7 @@ flowchart TD
 | **Vector DB** | ChromaDB | Document Embeddings |
 | **Embedding** | all-MiniLM-L6-v2 (384 dim) | Text Vectorization |
 | **LLM** | Llama 3.3 70B (Lightning AI) | Response Generation |
-| **Database** | Appwrite | Chat History, User Data |
+| **Database** | PostgreSQL | Chat History, User Data |
 | **Translation** | Llama-based Translation | Multi-language Support |
 | **TTS** | gTTS | Audio Response |
 
@@ -201,7 +201,7 @@ flowchart TD
 │      ▼                                                                   │
 │   ┌──────────────────────────────────────────────────────────────┐      │
 │   │  STORAGE                                                      │      │
-│   │  • ChromaDB  • Appwrite  • CSV Files  • Documents            │      │
+│   │  • ChromaDB  • PostgreSQL  • CSV Files  • Documents            │      │
 │   └──────────────────────────────────────────────────────────────┘      │
 │                                                                          │
 └─────────────────────────────────────────────────────────────────────────┘

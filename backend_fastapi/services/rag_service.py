@@ -42,3 +42,15 @@ async def ingest_document(file_path: str) -> int:
 def get_retriever():
     vectorstore = get_vectorstore()
     return vectorstore.as_retriever(search_kwargs={"k": 10})
+
+def delete_document(file_path: str) -> bool:
+    """
+    Deletes a document from the ChromaDB vector store based on its source path.
+    """
+    try:
+        vectorstore = get_vectorstore()
+        vectorstore._collection.delete(where={"source": file_path})
+        return True
+    except Exception as e:
+        print(f"Failed to delete embeddings for {file_path}: {e}")
+        return False

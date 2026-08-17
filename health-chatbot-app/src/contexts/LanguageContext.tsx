@@ -31,7 +31,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     const setLanguage = (lang: Language) => {
         setLanguageState(lang);
         localStorage.setItem('health-ai-lang', lang);
-        // Note: We don't automatically save to Appwrite here to avoid too many API calls.
+        // Note: We don't automatically save to database here to avoid too many API calls.
         // It should be saved explicitly when the user changes it in settings or onboarding.
     };
 

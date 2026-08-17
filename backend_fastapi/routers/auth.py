@@ -4,7 +4,7 @@ from typing import Optional
 import uuid
 import datetime
 import json
-import random
+import secrets
 import urllib.parse
 import os
 
@@ -38,7 +38,7 @@ class UpdatePreferencesRequest(BaseModel):
     prefs: dict
 
 @router.post("/signup")
-async def signup(payload: SignupRequest):
+def signup(payload: SignupRequest):
     """
     Register a new user in SQLite and return JWT token.
     """
@@ -76,7 +76,7 @@ async def signup(payload: SignupRequest):
     }
 
 @router.post("/login")
-async def login(payload: LoginRequest):
+def login(payload: LoginRequest):
     """
     Authenticate user via email and password, returning JWT token.
     """
@@ -106,17 +106,26 @@ async def login(payload: LoginRequest):
     }
 
 @router.get("/me")
-async def get_me(current_user: dict = Depends(get_current_user)):
+def get_me(current_user: dict = Depends(get_current_user)):
     """
-    Get current logged-in user profile.
+    Get current logged-in user profile from DB.
     """
-    current_user.pop("password_hash", None)
-    if isinstance(current_user.get("prefs"), str):
-        current_user["prefs"] = json.loads(current_user["prefs"])
-    return {"success": True, "user": current_user}
+    conn = get_db_connection()
+    user = conn.execute("SELECT * FROM users WHERE id = ?", (current_user["id"],)).fetchone()
+    conn.close()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    user_dict = dict(user)
+    user_dict.pop("password_hash", None)
+    if isinstance(user_dict.get("prefs"), str):
+        user_dict["prefs"] = json.loads(user_dict["prefs"])
+        
+    return {"success": True, "user": user_dict}
 
 @router.put("/preferences")
-async def update_preferences(payload: UpdatePreferencesRequest, current_user: dict = Depends(get_current_user)):
+def update_preferences(payload: UpdatePreferencesRequest, current_user: dict = Depends(get_current_user)):
     """
     Update user preferences.
     """
@@ -132,7 +141,7 @@ class UpdateProfileRequest(BaseModel):
     name: str
 
 @router.put("/profile")
-async def update_profile(payload: UpdateProfileRequest, current_user: dict = Depends(get_current_user)):
+def update_profile(payload: UpdateProfileRequest, current_user: dict = Depends(get_current_user)):
     """
     Update user profile info (e.g. name).
     """
@@ -144,13 +153,13 @@ async def update_profile(payload: UpdateProfileRequest, current_user: dict = Dep
     return {"success": True, "message": "Profile updated successfully"}
 
 @router.post("/send-otp")
-async def send_otp(payload: SendOTPRequest, background_tasks: BackgroundTasks):
+def send_otp(payload: SendOTPRequest, background_tasks: BackgroundTasks):
     """
     Generate an OTP, store it in SQLite, and email it to the user.
     """
     email = payload.email.lower()
     name = payload.name
-    otp = str(random.randint(100000, 999999))
+    otp = str(secrets.SystemRandom().randint(100000, 999999))
     expires_at = (datetime.datetime.utcnow() + datetime.timedelta(minutes=OTP_EXPIRY_MINUTES)).isoformat()
     doc_id = str(uuid.uuid4())
     now_iso = datetime.datetime.utcnow().isoformat()
@@ -176,7 +185,7 @@ async def send_otp(payload: SendOTPRequest, background_tasks: BackgroundTasks):
     return {"success": True, "message": "OTP sent successfully"}
 
 @router.post("/verify-otp")
-async def verify_otp(payload: VerifyOTPRequest):
+def verify_otp(payload: VerifyOTPRequest):
     """
     Verify the provided OTP from SQLite.
     """

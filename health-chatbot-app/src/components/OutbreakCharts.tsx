@@ -38,7 +38,10 @@ const PIE_COLORS = [
 
 interface ChartData {
     name: string;
-    count: number;
+    count?: number;
+    cases?: number;
+    deaths?: number;
+    outbreak_count?: number;
 }
 
 interface OutbreakChartsProps {
@@ -61,6 +64,7 @@ const EmptyState = ({ message }: { message: string }) => (
 // Custom tooltip with modern styling
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
+        const metricName = payload[0].name || (payload[0].dataKey === 'deaths' ? 'Deaths' : 'Confirmed Cases');
         return (
             <div className="bg-white dark:bg-slate-800 p-4 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl backdrop-blur-sm">
                 <p className="font-semibold text-slate-900 dark:text-white text-sm mb-1">
@@ -72,7 +76,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
                         style={{ backgroundColor: payload[0].color || CHART_COLORS.primary }}
                     />
                     <p className="text-slate-600 dark:text-slate-300 font-medium">
-                        {payload[0].name || 'Count'}: <span className="font-bold">{payload[0].value?.toLocaleString()}</span>
+                        {metricName}: <span className="font-bold">{payload[0].value?.toLocaleString()}</span>
                     </p>
                 </div>
             </div>
@@ -103,13 +107,17 @@ export const StateWiseChart = ({ data }: { data: ChartData[] }) => {
         return <EmptyState message="No state-wise data available" />;
     }
 
-    // Sort and limit to top 10 for better visualization
+    // Map metrics and sort by cases (fallback to count)
     const sortedData = [...data]
-        .sort((a, b) => b.count - a.count)
+        .map(item => ({
+            ...item,
+            displayValue: item.cases !== undefined ? item.cases : (item.count || 0)
+        }))
+        .sort((a, b) => b.displayValue - a.displayValue)
         .slice(0, 10);
 
     return (
-        <div className="h-[300px] w-full">
+        <div className="h-[300px] w-full min-h-[300px] min-w-[200px]">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={100}>
                 <BarChart data={sortedData} margin={{ top: 10, right: 20, left: 10, bottom: 60 }}>
                     <defs>
@@ -135,11 +143,11 @@ export const StateWiseChart = ({ data }: { data: ChartData[] }) => {
                     />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9', opacity: 0.5 }} />
                     <Bar
-                        dataKey="count"
+                        dataKey="displayValue"
                         fill="url(#stateGradient)"
                         radius={[6, 6, 0, 0]}
                         maxBarSize={50}
-                        name="Outbreaks"
+                        name="Confirmed Cases"
                     />
                 </BarChart>
             </ResponsiveContainer>
@@ -152,13 +160,17 @@ export const DistrictWiseChart = ({ data, state }: { data: ChartData[], state: s
         return <EmptyState message={`No district data available for ${state}`} />;
     }
 
-    // Sort and limit to top 10
+    // Map metrics and sort by cases (fallback to count)
     const sortedData = [...data]
-        .sort((a, b) => b.count - a.count)
+        .map(item => ({
+            ...item,
+            displayValue: item.cases !== undefined ? item.cases : (item.count || 0)
+        }))
+        .sort((a, b) => b.displayValue - a.displayValue)
         .slice(0, 10);
 
     return (
-        <div className="h-[300px] w-full">
+        <div className="h-[300px] w-full min-h-[300px] min-w-[200px]">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={100}>
                 <BarChart data={sortedData} layout="vertical" margin={{ top: 10, right: 30, left: 80, bottom: 10 }}>
                     <defs>
@@ -186,11 +198,11 @@ export const DistrictWiseChart = ({ data, state }: { data: ChartData[], state: s
                     />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f1f5f9', opacity: 0.5 }} />
                     <Bar
-                        dataKey="count"
+                        dataKey="displayValue"
                         fill="url(#districtGradient)"
                         radius={[0, 6, 6, 0]}
                         maxBarSize={25}
-                        name="Outbreaks"
+                        name="Confirmed Cases"
                     />
                 </BarChart>
             </ResponsiveContainer>
@@ -203,16 +215,17 @@ export const DiseaseDistributionChart = ({ data }: { data: ChartData[] }) => {
         return <EmptyState message="No disease data available" />;
     }
 
-    // Calculate total and percentages
-    const total = data.reduce((sum, item) => sum + (item.count || 0), 0);
-
-    // Limit to top 8 for better visibility
+    // Format and limit to top 8 by cases
     const limitedData = [...data]
-        .sort((a, b) => b.count - a.count)
+        .map(item => ({
+            ...item,
+            displayValue: item.cases !== undefined ? item.cases : (item.count || 0)
+        }))
+        .sort((a, b) => b.displayValue - a.displayValue)
         .slice(0, 8);
 
     const CustomPieLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: any) => {
-        if (percent < 0.05) return null; // Don't show label for very small slices
+        if (percent < 0.05) return null;
         const RADIAN = Math.PI / 180;
         const radius = outerRadius * 1.3;
         const x = cx + radius * Math.cos(-midAngle * RADIAN);
@@ -233,7 +246,7 @@ export const DiseaseDistributionChart = ({ data }: { data: ChartData[] }) => {
     };
 
     return (
-        <div className="h-[300px] w-full">
+        <div className="h-[300px] w-full min-h-[300px] min-w-[200px]">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={100}>
                 <PieChart>
                     <defs>
@@ -251,7 +264,8 @@ export const DiseaseDistributionChart = ({ data }: { data: ChartData[] }) => {
                         innerRadius={50}
                         outerRadius={90}
                         paddingAngle={3}
-                        dataKey="count"
+                        dataKey="displayValue"
+                        nameKey="name"
                         label={CustomPieLabel}
                         labelLine={{ stroke: '#cbd5e1', strokeWidth: 1 }}
                     >
@@ -276,10 +290,14 @@ export const DeathsByStateChart = ({ data }: { data: ChartData[] }) => {
         return <EmptyState message="No death data available" />;
     }
 
-    // Sort and limit to top 10
+    // Map deaths metric correctly
     const sortedData = [...data]
-        .filter(item => item.count > 0)
-        .sort((a, b) => b.count - a.count)
+        .map(item => ({
+            ...item,
+            deathsVal: item.deaths !== undefined ? item.deaths : (item.count || 0)
+        }))
+        .filter(item => item.deathsVal > 0)
+        .sort((a, b) => b.deathsVal - a.deathsVal)
         .slice(0, 10);
 
     if (sortedData.length === 0) {
@@ -287,7 +305,7 @@ export const DeathsByStateChart = ({ data }: { data: ChartData[] }) => {
     }
 
     return (
-        <div className="h-[300px] w-full">
+        <div className="h-[300px] w-full min-h-[300px] min-w-[200px]">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={100}>
                 <BarChart data={sortedData} margin={{ top: 10, right: 20, left: 10, bottom: 60 }}>
                     <defs>
@@ -313,7 +331,7 @@ export const DeathsByStateChart = ({ data }: { data: ChartData[] }) => {
                     />
                     <Tooltip content={<CustomTooltip />} cursor={{ fill: '#fef2f2', opacity: 0.5 }} />
                     <Bar
-                        dataKey="count"
+                        dataKey="deathsVal"
                         fill="url(#deathGradient)"
                         radius={[6, 6, 0, 0]}
                         maxBarSize={50}

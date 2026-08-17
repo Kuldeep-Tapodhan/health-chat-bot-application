@@ -136,7 +136,8 @@ export default function OutbreakMap({ stateData, onStateClick }: OutbreakMapProp
     }, []);
 
     // Map state name from GeoJSON to our data
-    const getStateData = (stateName: string): StateData | undefined => {
+    const getStateData = (stateName: string | undefined | null): StateData | undefined => {
+        if (!stateName || typeof stateName !== 'string' || !Array.isArray(stateData)) return undefined;
         // Handle common name variations
         const nameMap: Record<string, string> = {
             'Andaman and Nicobar': 'Andaman and Nicobar Islands',
@@ -148,10 +149,14 @@ export default function OutbreakMap({ stateData, onStateClick }: OutbreakMapProp
         };
 
         const mappedName = nameMap[stateName] || stateName;
-        return stateData.find(s =>
-            s.name.toLowerCase() === mappedName.toLowerCase() ||
-            s.name.toLowerCase() === stateName.toLowerCase()
-        );
+        const targetMapped = (mappedName || '').toLowerCase();
+        const targetState = (stateName || '').toLowerCase();
+
+        return stateData.find(s => {
+            if (!s || !s.name || typeof s.name !== 'string') return false;
+            const sName = s.name.toLowerCase();
+            return sName === targetMapped || sName === targetState;
+        });
     };
 
     // Style each state feature - use CASES (patient count) for coloring
