@@ -11,7 +11,7 @@ import Tesseract from 'tesseract.js';
 
 import {
     Upload, FileText, Activity, Calendar, User as UserIcon,
-    Download, Scan, Lock, ArrowRight, Loader2
+    Download, Scan, Lock, ArrowRight, Loader2, MessageSquare, Sparkles, Brain, CheckCircle2
 } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -36,6 +36,26 @@ export default function ReportsPage() {
     const [activeTab, setActiveTab] = useState<'new' | 'history'>('new');
     const [pastReports, setPastReports] = useState<any[]>([]);
     const [loadingHistory, setLoadingHistory] = useState(false);
+
+    const handleFollowUpInChat = (customTitle?: string, customAnalysis?: string) => {
+        const rawAnalysis = customAnalysis || analysis;
+        if (!rawAnalysis) return;
+
+        const reportText = typeof rawAnalysis === 'string' ? rawAnalysis : JSON.stringify(rawAnalysis, null, 2);
+        const reportTitle = customTitle || (file ? file.name : (textInput ? textInput.slice(0, 30) + '...' : 'Medical Report'));
+
+        const contextPayload = {
+            title: reportTitle,
+            analysis: reportText,
+            timestamp: new Date().toISOString()
+        };
+
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('pending_report_context', JSON.stringify(contextPayload));
+            sessionStorage.setItem('pending_report_context', JSON.stringify(contextPayload));
+        }
+        router.push('/chat?fromReport=' + Date.now());
+    };
 
     useEffect(() => {
         if (!loading && !user) {
@@ -453,7 +473,7 @@ export default function ReportsPage() {
 
                                     {/* Actions */}
                                     <div className="flex gap-4 p-6 border-t border-slate-200 dark:border-white/5 mx-6 lg:mx-8">
-                                        <button onClick={() => router.push('/chat')} className="flex-1 btn-gradient-primary text-white shadow-lg shadow-teal-500/20 hover:shadow-teal-500/30">
+                                        <button onClick={() => handleFollowUpInChat()} className="flex-1 btn-gradient-primary text-white shadow-lg shadow-teal-500/20 hover:shadow-teal-500/30">
                                             <span className="flex items-center justify-center gap-2">Follow-up in Chat <ArrowRight className="w-4 h-4" /></span>
                                         </button>
                                         <button onClick={() => { setAnalysis(null); setProcessingStep('idle'); }} className="flex-1 py-3 bg-white dark:bg-white/5 text-slate-700 dark:text-white font-medium hover:bg-slate-50 dark:hover:bg-white/10 transition-colors border border-slate-200 dark:border-white/10 rounded-xl">
@@ -539,27 +559,59 @@ export default function ReportsPage() {
                                         </div>
                                     ) : (
                                         // Processing State
-                                        <div className="py-12">
-                                            <div className="relative w-24 h-24 mx-auto mb-8">
-                                                <div className="absolute inset-0 border-4 border-slate-100 dark:border-white/5 rounded-full"></div>
-                                                <div className="absolute inset-0 border-4 border-purple-500 dark:border-purple-400 rounded-full border-t-transparent animate-spin"></div>
-                                                <div className="absolute inset-0 flex items-center justify-center">
-                                                    <Scan className="w-8 h-8 text-purple-500 dark:text-purple-400 animate-pulse" />
+                                        <div className="py-12 px-4 max-w-lg mx-auto">
+                                            {/* Futuristic Radar Scanner */}
+                                            <div className="relative w-32 h-32 mx-auto mb-8 flex items-center justify-center">
+                                                <div className="absolute inset-0 border-4 border-purple-500/20 rounded-full animate-ping" />
+                                                <div className="absolute inset-0 border-4 border-dashed border-purple-500/40 rounded-full animate-spin" style={{ animationDuration: '10s' }} />
+                                                <div className="absolute inset-2 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" />
+                                                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-500/20 via-indigo-500/20 to-blue-500/20 border border-purple-500/30 flex items-center justify-center shadow-xl shadow-purple-500/20">
+                                                    <Brain className="w-8 h-8 text-purple-500 dark:text-purple-400 animate-pulse" />
                                                 </div>
                                             </div>
-                                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">
-                                                {processingStep === 'uploading' && t('reports.processing.uploading')}
-                                                {processingStep === 'scanning' && t('reports.processing.scanning')}
-                                                {processingStep === 'analyzing' && t('reports.processing.analyzing')}
+
+                                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight flex items-center justify-center gap-2">
+                                                <Sparkles className="w-5 h-5 text-purple-500 animate-spin" />
+                                                <span>
+                                                    {processingStep === 'uploading' && t('reports.processing.uploading')}
+                                                    {processingStep === 'scanning' && t('reports.processing.scanning')}
+                                                    {processingStep === 'analyzing' && t('reports.processing.analyzing')}
+                                                </span>
                                             </h3>
-                                            <p className="text-slate-500 dark:text-slate-400 mb-8 max-w-md mx-auto">
+                                            <p className="text-slate-500 dark:text-slate-400 mb-8 text-sm">
                                                 {t('reports.processing.subtitle')}
                                             </p>
-                                            <div className="w-64 h-1.5 bg-slate-100 dark:bg-white/10 rounded-full mx-auto overflow-hidden">
-                                                <div
-                                                    className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300 rounded-full"
-                                                    style={{ width: `${progress}%` }}
-                                                ></div>
+
+                                            {/* Timeline Steps */}
+                                            <div className="grid grid-cols-3 gap-2 mb-8 text-xs font-semibold">
+                                                <div className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 transition-all ${processingStep === 'uploading' ? 'bg-purple-500/10 border-purple-500/40 text-purple-600 dark:text-purple-400 shadow-sm animate-pulse' : (progress > 20 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-400')}`}>
+                                                    {progress > 20 ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Upload className="w-4 h-4" />}
+                                                    <span>1. Upload</span>
+                                                </div>
+                                                <div className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 transition-all ${processingStep === 'scanning' ? 'bg-purple-500/10 border-purple-500/40 text-purple-600 dark:text-purple-400 shadow-sm animate-pulse' : (progress > 60 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-400')}`}>
+                                                    {progress > 60 ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Scan className="w-4 h-4" />}
+                                                    <span>2. Scan</span>
+                                                </div>
+                                                <div className={`p-2.5 rounded-xl border flex flex-col items-center gap-1 transition-all ${processingStep === 'analyzing' ? 'bg-purple-500/10 border-purple-500/40 text-purple-600 dark:text-purple-400 shadow-sm animate-pulse' : (progress >= 100 ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400' : 'bg-slate-100 dark:bg-white/5 border-transparent text-slate-400')}`}>
+                                                    {progress >= 100 ? <CheckCircle2 className="w-4 h-4 text-emerald-500" /> : <Brain className="w-4 h-4" />}
+                                                    <span>3. Analyze</span>
+                                                </div>
+                                            </div>
+
+                                            {/* Progress Bar & Percentage */}
+                                            <div className="space-y-2">
+                                                <div className="flex justify-between text-xs font-bold text-slate-500 dark:text-slate-400 px-1">
+                                                    <span>Processing Report</span>
+                                                    <span>{Math.round(progress)}%</span>
+                                                </div>
+                                                <div className="w-full h-2 bg-slate-100 dark:bg-white/10 rounded-full overflow-hidden p-0.5 border border-slate-200 dark:border-white/10">
+                                                    <div
+                                                        className="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-emerald-400 transition-all duration-300 rounded-full shadow-lg shadow-purple-500/50 relative"
+                                                        style={{ width: `${progress}%` }}
+                                                    >
+                                                        <div className="absolute right-0 top-0 bottom-0 w-2 bg-white rounded-full animate-ping opacity-75" />
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     )}
@@ -623,8 +675,18 @@ export default function ReportsPage() {
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <span className="text-sm font-medium text-purple-600 dark:text-purple-400 p-2 bg-purple-50 dark:bg-purple-500/10 rounded-lg">
+                                                <div className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleFollowUpInChat(report.title, report.analysis);
+                                                        }}
+                                                        className="text-xs font-semibold text-teal-600 dark:text-teal-400 px-3 py-1.5 bg-teal-50 dark:bg-teal-500/10 hover:bg-teal-100 dark:hover:bg-teal-500/20 rounded-lg flex items-center gap-1.5 transition-colors border border-teal-200 dark:border-teal-500/20"
+                                                    >
+                                                        <MessageSquare className="w-3.5 h-3.5" />
+                                                        <span>Follow-up in Chat</span>
+                                                    </button>
+                                                    <span className="text-sm font-medium text-purple-600 dark:text-purple-400 p-2 bg-purple-50 dark:bg-purple-500/10 rounded-lg group-hover:bg-purple-100 dark:group-hover:bg-purple-500/20 transition-colors">
                                                         View Analysis
                                                     </span>
                                                 </div>
