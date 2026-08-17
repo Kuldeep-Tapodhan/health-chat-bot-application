@@ -124,9 +124,11 @@ export default function Sidebar() {
                         const isActive = pathname === item.href;
                         return (
                             <Link
-                                key={item.href}
+                                key={item.name}
                                 href={item.href}
                                 onClick={closeMobile}
+                                aria-label={item.name}
+                                aria-current={isActive ? 'page' : undefined}
                                 className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
                                     ? 'bg-gradient-to-r from-emerald-500/15 via-teal-500/10 to-indigo-500/15 text-emerald-600 dark:text-emerald-300 font-bold border border-emerald-500/30 shadow-[0_0_15px_rgba(16,185,129,0.12)]'
                                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/5'

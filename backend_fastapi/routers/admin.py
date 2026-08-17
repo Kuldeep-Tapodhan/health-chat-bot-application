@@ -395,8 +395,9 @@ def get_analytics_insights(admin: dict = Depends(get_current_admin_user)):
         return {"content": response.content}
 
     except Exception as e:
-        print(f"Insights Error: {e}")
-        return {"content": f"Unable to generate AI insights: {str(e)}"}
+        from utils.error_handler import handle_ai_exception
+        friendly_msg = handle_ai_exception(e)
+        return {"content": friendly_msg}
 
 @router.get("/analytics/effectiveness")
 def get_analytics_effectiveness(admin: dict = Depends(get_current_admin_user)):

@@ -15,6 +15,21 @@ function clearAuthCookie() {
     document.cookie = 'token=; path=/; max-age=0; SameSite=Lax';
 }
 
+function isTokenExpired(token: string): boolean {
+    try {
+        const payloadBase64 = token.split('.')[1];
+        if (!payloadBase64) return true;
+        const decodedJson = atob(payloadBase64);
+        const payload = JSON.parse(decodedJson);
+        if (payload && payload.exp) {
+            return Date.now() >= payload.exp * 1000;
+        }
+        return false;
+    } catch {
+        return false;
+    }
+}
+
 interface AuthContextType {
     user: User | null;
     loading: boolean;
@@ -51,7 +66,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const loadUser = async () => {
             const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-            if (!token) {
+            if (!token || isTokenExpired(token)) {
+                if (token) {
+                    localStorage.removeItem('token');
+                    clearAuthCookie();
+                }
                 setUser(null);
                 setLoading(false);
                 return;

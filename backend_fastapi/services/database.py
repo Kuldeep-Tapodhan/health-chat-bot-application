@@ -484,6 +484,22 @@ def init_db():
         )
     """)
 
+    # 18. Database Indexes for High-Speed Query Acceleration
+    indexes = [
+        "CREATE INDEX IF NOT EXISTS idx_ai_chats_user_id ON ai_chats(user_id)",
+        "CREATE INDEX IF NOT EXISTS idx_ai_chats_created_at ON ai_chats(created_at)",
+        "CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id)",
+        "CREATE INDEX IF NOT EXISTS idx_reports_timestamp ON reports(timestamp)",
+        "CREATE INDEX IF NOT EXISTS idx_outbreaks_state ON outbreaks(state_ut)",
+        "CREATE INDEX IF NOT EXISTS idx_outbreaks_disease ON outbreaks(disease_illness)",
+        "CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)"
+    ]
+    for idx_sql in indexes:
+        try:
+            conn.execute(idx_sql)
+        except Exception as idx_err:
+            print(f"Index creation notice: {idx_err}")
+
     conn.commit()
     conn.close()
 

@@ -10,19 +10,17 @@ export default function PageTransition({ children }: { children: React.ReactNode
 
     useEffect(() => {
         setIsTransitioning(true);
-        setProgress(35);
+        setProgress(50);
 
-        const timer1 = setTimeout(() => setProgress(75), 80);
-        const timer2 = setTimeout(() => setProgress(100), 220);
-        const timer3 = setTimeout(() => {
+        const timer1 = setTimeout(() => setProgress(100), 70);
+        const timer2 = setTimeout(() => {
             setIsTransitioning(false);
             setProgress(0);
-        }, 380);
+        }, 160);
 
         return () => {
             clearTimeout(timer1);
             clearTimeout(timer2);
-            clearTimeout(timer3);
         };
     }, [pathname]);
 

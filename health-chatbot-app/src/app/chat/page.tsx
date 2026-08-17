@@ -88,6 +88,7 @@ export default function ChatPage() {
     const [isRecording, setIsRecording] = useState(false);
     const [playingMessageIndex, setPlayingMessageIndex] = useState<number | null>(null);
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const recognitionRef = useRef<any>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const [translatedContent, setTranslatedContent] = useState<Record<number, string>>({});
     const [isTranslating, setIsTranslating] = useState(false);
@@ -366,63 +367,6 @@ export default function ChatPage() {
         }
     };
 
-    // --- Audio Functions ---
-
-    const startRecording = async () => {
-        try {
-            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream);
-            mediaRecorderRef.current = mediaRecorder;
-            audioChunksRef.current = [];
-
-            mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
-                    audioChunksRef.current.push(event.data);
-                }
-            };
-
-            mediaRecorder.onstop = handleAudioUpload;
-            mediaRecorder.start();
-            setIsRecording(true);
-        } catch (err) {
-            console.error('Error accessing microphone:', err);
-            setError('Could not access microphone.');
-        }
-    };
-
-    const stopRecording = () => {
-        if (mediaRecorderRef.current && isRecording) {
-            mediaRecorderRef.current.stop();
-            setIsRecording(false);
-            // Stop all tracks
-            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-        }
-    };
-
-    const handleAudioUpload = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' }); // Chrome records webm
-        const formData = new FormData();
-        formData.append('file', audioBlob, 'recording.webm');
-        formData.append('language', chatLanguage);
-
-        try {
-            const response = await fetch(`${API_BASE_URL}/speech/stt`, {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) throw new Error('Speech to text failed');
-
-            const data = await response.json();
-            if (data.text) {
-                setInput(data.text);
-            }
-        } catch (err: any) {
-            console.error('STT Error:', err);
-            setError('Failed to transcribe audio.');
-        }
-    };
-
     const playTextToSpeech = async (text: string, index: number) => {
         if (playingMessageIndex === index) {
             // Stop logic could be implemented if we stored the audio instance
@@ -575,6 +519,73 @@ export default function ChatPage() {
         } catch (e) {
             console.error("Single msg translation failed", e);
         }
+    };
+
+    const startRecording = () => {
+        if (typeof window === 'undefined') return;
+
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            toast.error('Speech-to-text is not supported in this browser. Please type your message.');
+            return;
+        }
+
+        try {
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = chatLanguage || 'en-IN';
+
+            recognition.onstart = () => {
+                setIsRecording(true);
+                toast.success('Listening... Speak your symptoms');
+            };
+
+            recognition.onresult = (event: any) => {
+                let transcript = '';
+                for (let i = event.resultIndex; i < event.results.length; i++) {
+                    transcript += event.results[i][0].transcript;
+                }
+                if (transcript.trim()) {
+                    setInput(prev => {
+                        const base = prev.trim();
+                        return base ? `${base} ${transcript.trim()}` : transcript.trim();
+                    });
+                }
+            };
+
+            recognition.onerror = (event: any) => {
+                console.error('Speech recognition error:', event.error);
+                setIsRecording(false);
+                if (event.error === 'not-allowed') {
+                    toast.error('Microphone access denied. Please enable mic permissions in your browser.');
+                }
+            };
+
+            recognition.onend = () => {
+                setIsRecording(false);
+            };
+
+            recognitionRef.current = recognition;
+            recognition.start();
+        } catch (err: any) {
+            console.error('Speech recognition error:', err);
+            setIsRecording(false);
+            toast.error('Could not start microphone');
+        }
+    };
+
+    const stopRecording = () => {
+        if (recognitionRef.current) {
+            try {
+                recognitionRef.current.stop();
+            } catch (e) {
+                console.error(e);
+            }
+            recognitionRef.current = null;
+        }
+        setIsRecording(false);
     };
 
     const promptSuggestions = [
