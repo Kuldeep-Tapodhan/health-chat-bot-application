@@ -168,27 +168,28 @@ export default function ActivityPage() {
                             <div className="space-y-4">
                                 {[...Array(5)].map((_, i) => (
                                     <div key={i} className="flex items-center gap-4 p-4 rounded-xl border border-transparent">
-                                        <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-white/5 animate-pulse" />
+                                        <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-white/5 animate-shimmer" />
                                         <div className="space-y-2 flex-1">
-                                            <div className="h-4 w-32 bg-slate-200 dark:bg-white/5 rounded animate-pulse" />
-                                            <div className="h-3 w-48 bg-slate-200 dark:bg-white/5 rounded animate-pulse" />
+                                            <div className="h-4 w-32 bg-slate-200 dark:bg-white/5 rounded animate-shimmer" />
+                                            <div className="h-3 w-48 bg-slate-200 dark:bg-white/5 rounded animate-shimmer" />
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         ) : filteredActivities.length === 0 ? (
                             <div className="flex flex-col items-center justify-center py-20 text-slate-400">
-                                <Clock className="w-16 h-16 mb-4 opacity-20" />
+                                <Clock className="w-16 h-16 mb-4 opacity-20 animate-subtle-float" />
                                 <p className="text-lg font-medium">No activity found</p>
                                 <p className="text-sm">Activities will appear here when you use the app.</p>
                             </div>
                         ) : (
                             <div className="space-y-2">
-                                {filteredActivities.map((item) => (
+                                {filteredActivities.map((item, idx) => (
                                     <div
                                         key={item.id}
                                         onClick={() => router.push(item.type === 'chat' ? '/chat' : '/reports')}
-                                        className="flex items-center gap-4 p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all duration-300 group cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-white/10"
+                                        className="flex items-center gap-4 p-4 rounded-xl hover:bg-slate-50 dark:hover:bg-white/5 transition-all duration-300 group cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-white/10 animate-fade-in-up"
+                                        style={{ animationDelay: `${idx * 0.06}s` }}
                                     >
                                         <div className={`w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 transition-all duration-300 group-hover:scale-110 ${item.type === 'chat'
                                             ? 'bg-blue-500/10 text-blue-500 group-hover:bg-blue-500 group-hover:text-white'

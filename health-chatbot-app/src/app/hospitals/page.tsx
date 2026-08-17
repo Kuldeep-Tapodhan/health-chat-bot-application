@@ -354,12 +354,17 @@ export default function HospitalsPage() {
 
                         {searching ? (
                             <div className="space-y-4">
+                                <div className="p-4 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center gap-3 animate-pulse">
+                                    <Loader2 className="w-5 h-5 text-teal-500 animate-spin flex-shrink-0" />
+                                    <span className="text-xs font-bold text-teal-600 dark:text-teal-400">Locating nearby medical facilities & hospitals...</span>
+                                </div>
                                 {[...Array(4)].map((_, i) => (
-                                    <div key={i} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 animate-pulse flex gap-3">
-                                        <div className="w-24 h-24 bg-slate-200 dark:bg-slate-700 rounded-lg shrink-0"></div>
+                                    <div key={i} className="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-100 dark:border-slate-700 flex gap-3 animate-fade-in-up" style={{ animationDelay: `${i * 0.08}s` }}>
+                                        <div className="w-24 h-24 bg-slate-200 dark:bg-slate-700 rounded-lg shrink-0 animate-shimmer" />
                                         <div className="flex-1 space-y-2 py-1">
-                                            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4"></div>
-                                            <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2"></div>
+                                            <div className="h-4 bg-slate-200 dark:bg-slate-700 rounded w-3/4 animate-shimmer" />
+                                            <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/2 animate-shimmer" />
+                                            <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-1/4 animate-shimmer" />
                                         </div>
                                     </div>
                                 ))}

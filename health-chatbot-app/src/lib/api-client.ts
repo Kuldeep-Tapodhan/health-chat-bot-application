@@ -50,19 +50,33 @@ class ApiClient {
         }
 
         const baseUrl = getApiBaseUrl();
-        const response = await fetch(`${baseUrl}${endpoint}`, {
-            ...fetchOptions,
-            headers,
-        });
 
-        const data = await response.json();
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-        if (!response.ok) {
-            const errorMsg = data.detail || data.error?.message || 'API request failed';
-            throw new Error(errorMsg);
+        try {
+            const response = await fetch(`${baseUrl}${endpoint}`, {
+                ...fetchOptions,
+                headers,
+                signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                const errorMsg = data.detail || data.error?.message || 'API request failed';
+                throw new Error(errorMsg);
+            }
+
+            return data;
+        } catch (err: any) {
+            clearTimeout(timeoutId);
+            if (err.name === 'AbortError') {
+                throw new Error('API Request timed out');
+            }
+            throw err;
         }
-
-        return data;
     }
 
     // Auth endpoints
