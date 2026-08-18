@@ -65,7 +65,10 @@ class ApiClient {
             const data = await response.json();
 
             if (!response.ok) {
-                const errorMsg = data.detail || data.error?.message || 'API request failed';
+                let errorMsg = data.detail || data.error?.message || 'API request failed';
+                if (typeof errorMsg === 'string' && (errorMsg.includes('429') || errorMsg.toLowerCase().includes('quota') || errorMsg.includes('generativelanguage') || errorMsg.toLowerCase().includes('resourceexhausted'))) {
+                    errorMsg = 'The AI assistant is currently experiencing high demand. Please wait a few moments and try your request again.';
+                }
                 throw new Error(errorMsg);
             }
 
@@ -75,7 +78,11 @@ class ApiClient {
             if (err.name === 'AbortError') {
                 throw new Error('API Request timed out');
             }
-            throw err;
+            let errStr = err.message || String(err);
+            if (typeof errStr === 'string' && (errStr.includes('429') || errStr.toLowerCase().includes('quota') || errStr.includes('generativelanguage') || errStr.toLowerCase().includes('resourceexhausted'))) {
+                errStr = 'The AI assistant is currently experiencing high demand. Please wait a few moments and try your request again.';
+            }
+            throw new Error(errStr);
         }
     }
 

@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Query, HTTPException, Depends
 from typing import Optional, List, Dict, Any
 from services.database import get_db_connection
+from services.auth_service import get_current_user
 import sqlite3
 import json
 
@@ -16,7 +17,8 @@ def get_outbreaks(
     pageSize: int = 10,
     startDate: Optional[str] = None,
     endDate: Optional[str] = None,
-    verificationStatus: Optional[str] = None
+    verificationStatus: Optional[str] = None,
+    user: dict = Depends(get_current_user)
 ):
     offset = (page - 1) * pageSize
     conn = get_db_connection()

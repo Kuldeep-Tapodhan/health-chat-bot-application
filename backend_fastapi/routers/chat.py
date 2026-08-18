@@ -69,7 +69,9 @@ async def chat_stream(request: StreamRequest):
                 if hasattr(chunk, "content") and chunk.content:
                     yield chunk.content
         except Exception as e:
-            yield f"Error generating response: {str(e)}"
+            from utils.error_handler import handle_ai_exception
+            friendly_msg = handle_ai_exception(e)
+            yield friendly_msg
 
     return StreamingResponse(generate(), media_type="text/plain")
 
@@ -359,7 +361,9 @@ async def chat_endpoint(request: ChatRequest):
             return ChatResponse(message=response_text)
             
         except Exception as e:
-             return ChatResponse(message=f"Error analyzing data: {str(e)}")
+            from utils.error_handler import handle_ai_exception
+            friendly_msg = handle_ai_exception(e)
+            return ChatResponse(message=friendly_msg)
 
     else:
         # Use RAG Chain with History
@@ -471,7 +475,9 @@ async def chat_endpoint(request: ChatRequest):
             )
             return ChatResponse(message=response['answer'])
         except Exception as e:
-            return ChatResponse(message=f"Error retrieving information: {str(e)}")
+            from utils.error_handler import handle_ai_exception
+            friendly_msg = handle_ai_exception(e)
+            return ChatResponse(message=friendly_msg)
 
 def find_nearby_hospitals(df, location_query, distance_km):
     import numpy as np

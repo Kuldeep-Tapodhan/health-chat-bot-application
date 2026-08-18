@@ -1,10 +1,11 @@
-from fastapi import APIRouter, HTTPException, Query, BackgroundTasks
+from fastapi import APIRouter, HTTPException, Query, BackgroundTasks, Depends
 from typing import List, Optional
 import pandas as pd
 import os
 from datetime import datetime
 import uuid
 from services.database import get_db_connection
+from services.auth_service import get_current_user
 
 def log_search_task(query: str, city: str, lat: float, lng: float):
     try:
@@ -22,12 +23,9 @@ def log_search_task(query: str, city: str, lat: float, lng: float):
 CSV_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "hospital_data.csv")
 
 # Load data into memory (simple caching)
-# In production, might want to reload occasionally or use a database
 try:
     if os.path.exists(CSV_PATH):
-        df_hospitals = pd.read_csv(CSV_PATH)
-        # Normalize columns if needed
-        # df_hospitals.columns = [c.lower().replace(' ', '_') for c in df_hospitals.columns]
+        df_hospitals = pd.read_csv(CSV_PATH, low_memory=False)
     else:
         print(f"Warning: Hospital data file not found at {CSV_PATH}")
         df_hospitals = pd.DataFrame()
@@ -44,7 +42,8 @@ async def search_hospitals(
     city: Optional[str] = Query(None, description="Filter by city"),
     lat: Optional[float] = Query(None, description="Latitude for proximity search"),
     lng: Optional[float] = Query(None, description="Longitude for proximity search"),
-    limit: int = 10
+    limit: int = 10,
+    user: dict = Depends(get_current_user)
 ):
     """
     Search for hospitals based on query and city.

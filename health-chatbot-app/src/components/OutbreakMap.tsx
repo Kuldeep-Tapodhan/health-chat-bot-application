@@ -17,8 +17,8 @@ interface OutbreakMapProps {
     onStateClick?: (stateName: string) => void;
 }
 
-// India GeoJSON - simplified boundaries for states
-const INDIA_GEOJSON_URL = 'https://raw.githubusercontent.com/geohacker/india/master/state/india_state.geojson';
+// India GeoJSON - Official Survey of India boundaries (28 States & 8 UTs including J&K and Ladakh)
+const INDIA_GEOJSON_URL = '/data/india_states.json';
 
 // Color scale based on NUMBER OF CASES - 0 to 100 scale
 function getColor(cases: number): string {
@@ -86,10 +86,10 @@ function MapBounds() {
     const map = useMap();
 
     useEffect(() => {
-        // Set strict bounds for India only
+        // Set strict bounds for India only (including J&K and Ladakh)
         const indiaBounds: [[number, number], [number, number]] = [
-            [6.5, 68.0],   // Southwest corner (near Kerala/Tamil Nadu)
-            [37.5, 97.5]   // Northeast corner (near Arunachal Pradesh)
+            [6.0, 68.0],   // Southwest corner (Southern Kerala/Lakshadweep to Western Gujarat)
+            [37.5, 97.5]   // Northeast corner (Northern Ladakh/J&K to Eastern Arunachal)
         ];
 
         // Center on India with appropriate zoom
@@ -138,14 +138,20 @@ export default function OutbreakMap({ stateData, onStateClick }: OutbreakMapProp
     // Map state name from GeoJSON to our data
     const getStateData = (stateName: string | undefined | null): StateData | undefined => {
         if (!stateName || typeof stateName !== 'string' || !Array.isArray(stateData)) return undefined;
-        // Handle common name variations
+        // Handle common name variations & official Indian UT names
         const nameMap: Record<string, string> = {
+            'Andaman & Nicobar Island': 'Andaman and Nicobar Islands',
             'Andaman and Nicobar': 'Andaman and Nicobar Islands',
-            'Arunachal Pradesh': 'Arunachal Pradesh',
+            'Arunanchal Pradesh': 'Arunachal Pradesh',
+            'Dadara & Nagar Havelli': 'Dadra and Nagar Haveli and Daman and Diu',
+            'Daman & Diu': 'Dadra and Nagar Haveli and Daman and Diu',
             'Dadra and Nagar Haveli': 'Dadra and Nagar Haveli and Daman and Diu',
             'NCT of Delhi': 'Delhi',
+            'Jammu & Kashmir': 'Jammu & Kashmir',
             'Jammu and Kashmir': 'Jammu & Kashmir',
-            'Orissa': 'Odisha'
+            'J&K': 'Jammu & Kashmir',
+            'Orissa': 'Odisha',
+            'Pondicherry': 'Puducherry'
         };
 
         const mappedName = nameMap[stateName] || stateName;
@@ -155,7 +161,7 @@ export default function OutbreakMap({ stateData, onStateClick }: OutbreakMapProp
         return stateData.find(s => {
             if (!s || !s.name || typeof s.name !== 'string') return false;
             const sName = s.name.toLowerCase();
-            return sName === targetMapped || sName === targetState;
+            return sName === targetMapped || sName === targetState || sName.includes(targetState) || targetState.includes(sName);
         });
     };
 
@@ -163,7 +169,7 @@ export default function OutbreakMap({ stateData, onStateClick }: OutbreakMapProp
     const style = (feature: Feature<Geometry, any> | undefined) => {
         if (!feature) return {};
 
-        const stateName = feature.properties?.NAME_1 || feature.properties?.name || '';
+        const stateName = feature.properties?.ST_NM || feature.properties?.NAME_1 || feature.properties?.state_name || feature.properties?.name || '';
         const data = getStateData(stateName);
         // Use cases (patients) if available, otherwise fall back to count
         const cases = data?.cases || data?.count || 0;
@@ -175,14 +181,14 @@ export default function OutbreakMap({ stateData, onStateClick }: OutbreakMapProp
             fillColor: getColorFn(cases),
             weight: isHovered ? 3 : 1,
             opacity: 1,
-            color: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.3)',
-            fillOpacity: isHovered ? 0.9 : 0.7
+            color: isDark ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.4)',
+            fillOpacity: isHovered ? 0.9 : 0.75
         };
     };
 
     // Event handlers for each feature
     const onEachFeature = (feature: Feature<Geometry, any>, layer: L.Layer) => {
-        const stateName = feature.properties?.NAME_1 || feature.properties?.name || 'Unknown';
+        const stateName = feature.properties?.ST_NM || feature.properties?.NAME_1 || feature.properties?.state_name || feature.properties?.name || 'Unknown';
         const data = getStateData(stateName);
 
         // Popup content - show Cases prominently

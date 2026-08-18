@@ -168,8 +168,9 @@ You are a professional, empathetic, and highly accurate Medical Report Analyst. 
         return {"success": True, "analysis": content}
 
     except Exception as e:
-        print(f"Analysis Error: {e}")
-        raise HTTPException(status_code=500, detail=f"AI Analysis failed: {str(e)}")
+        from utils.error_handler import handle_ai_exception
+        friendly_msg = handle_ai_exception(e)
+        raise HTTPException(status_code=500, detail=friendly_msg)
 
 class ReportSaveRequest(BaseModel):
     user_id: str
