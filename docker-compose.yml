@@ -1,5 +1,5 @@
 services:
-  # FastAPI Backend Service (Using SQLite)
+  # FastAPI Backend Service (Using Supabase PostgreSQL)
   backend:
     build:
       context: ./backend_fastapi
@@ -10,11 +10,8 @@ services:
       - "${BACKEND_PORT:-8001}:8001"
     env_file:
       - ./backend_fastapi/.env
-    environment:
-      DATABASE_URL: ""
     volumes:
       - chroma_db_data:/app/chroma_db
-      - sqlite_db_data:/app/data
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8001/"]
       interval: 10s
@@ -41,6 +38,4 @@ services:
 
 volumes:
   chroma_db_data:
-    driver: local
-  sqlite_db_data:
     driver: local

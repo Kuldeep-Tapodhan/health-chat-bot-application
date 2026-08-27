@@ -80,25 +80,29 @@ async def startup_event():
     print("\n" + "="*50)
     print(f"🚀 API Running on port 8001")
     
-    # Check and create Super Admin
+    # Check and create or sync Super Admin password
     super_admin_email = os.getenv("SUPER_ADMIN_EMAIL")
     super_admin_password = os.getenv("SUPER_ADMIN_PASSWORD")
     if super_admin_email and super_admin_password:
-        conn = get_db_connection()
-        existing_admin = conn.execute("SELECT * FROM users WHERE email = ?", (super_admin_email.lower(),)).fetchone()
-        if not existing_admin:
-            print(f"🛡️  Creating default Super Admin: {super_admin_email}")
-            user_id = str(uuid.uuid4())
+        with get_db_connection() as conn:
+            existing_admin = conn.execute("SELECT * FROM users WHERE email = ?", (super_admin_email.lower(),)).fetchone()
             hashed_pwd = hash_password(super_admin_password)
             now_iso = datetime.datetime.utcnow().isoformat()
-            default_prefs = json.dumps({"notifications": True, "theme": "system"})
-            
-            conn.execute("""
-                INSERT INTO users (id, email, password_hash, name, role, prefs, created_at, last_active)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (user_id, super_admin_email.lower(), hashed_pwd, "Super Admin", "admin", default_prefs, now_iso, now_iso))
-            conn.commit()
-        conn.close()
+            if not existing_admin:
+                print(f"🛡️  Creating default Super Admin: {super_admin_email}")
+                user_id = str(uuid.uuid4())
+                default_prefs = json.dumps({"notifications": True, "theme": "system"})
+                
+                conn.execute("""
+                    INSERT INTO users (id, email, password_hash, name, role, prefs, created_at, last_active)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (user_id, super_admin_email.lower(), hashed_pwd, "Super Admin", "admin", default_prefs, now_iso, now_iso))
+                conn.commit()
+            else:
+                if not verify_password(super_admin_password, existing_admin["password_hash"]):
+                    print(f"🛡️  Updating Super Admin password hash for {super_admin_email}")
+                    conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (hashed_pwd, existing_admin["id"]))
+                    conn.commit()
 
     # Launch live government data sync and hourly background scheduler
     asyncio.create_task(hourly_government_data_sync())

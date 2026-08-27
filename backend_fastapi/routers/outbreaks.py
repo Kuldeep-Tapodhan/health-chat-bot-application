@@ -6,6 +6,7 @@ import json
 
 router = APIRouter()
 
+@router.get("")
 @router.get("/")
 def get_outbreaks(
     data_type: str = Query("table", alias="type", description="Type of data requested: states, districts, diseases, deaths, mapdata, table, canonicals, stats"),

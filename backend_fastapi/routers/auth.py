@@ -40,28 +40,26 @@ class UpdatePreferencesRequest(BaseModel):
 @router.post("/signup")
 def signup(payload: SignupRequest):
     """
-    Register a new user in SQLite and return JWT token.
+    Register a new user in database and return JWT token.
     """
-    conn = get_db_connection()
-    existing_user = conn.execute("SELECT * FROM users WHERE email = ?", (payload.email.lower(),)).fetchone()
-    if existing_user:
-        conn.close()
-        raise HTTPException(status_code=400, detail="User with this email already exists")
+    with get_db_connection() as conn:
+        existing_user = conn.execute("SELECT * FROM users WHERE email = ?", (payload.email.lower(),)).fetchone()
+        if existing_user:
+            raise HTTPException(status_code=400, detail="User with this email already exists")
 
-    user_id = str(uuid.uuid4())
-    hashed_pwd = hash_password(payload.password)
-    now_iso = datetime.datetime.utcnow().isoformat()
-    default_prefs = json.dumps({"notifications": True, "theme": "system"})
-    user_role = payload.role if payload.role in ["user", "admin"] else "user"
+        user_id = str(uuid.uuid4())
+        hashed_pwd = hash_password(payload.password)
+        now_iso = datetime.datetime.utcnow().isoformat()
+        default_prefs = json.dumps({"notifications": True, "theme": "system"})
+        user_role = payload.role if payload.role in ["user", "admin"] else "user"
 
-    conn.execute("""
-        INSERT INTO users (id, email, password_hash, name, role, prefs, created_at, last_active)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, (user_id, payload.email.lower(), hashed_pwd, payload.name, user_role, default_prefs, now_iso, now_iso))
-    conn.commit()
+        conn.execute("""
+            INSERT INTO users (id, email, password_hash, name, role, prefs, created_at, last_active)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        """, (user_id, payload.email.lower(), hashed_pwd, payload.name, user_role, default_prefs, now_iso, now_iso))
+        conn.commit()
 
-    user_row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
-    conn.close()
+        user_row = conn.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
 
     token = create_access_token({"sub": user_id, "email": payload.email.lower(), "role": user_role})
     
@@ -80,18 +78,21 @@ def login(payload: LoginRequest):
     """
     Authenticate user via email and password, returning JWT token.
     """
-    conn = get_db_connection()
-    user = conn.execute("SELECT * FROM users WHERE email = ?", (payload.email.lower(),)).fetchone()
-    
-    if not user or not verify_password(payload.password, user["password_hash"]):
-        conn.close()
-        raise HTTPException(status_code=401, detail="Invalid email or password")
+    with get_db_connection() as conn:
+        user = conn.execute("SELECT * FROM users WHERE email = ?", (payload.email.lower(),)).fetchone()
+        
+        if not user or not verify_password(payload.password, user["password_hash"]):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
 
-    # Update last_active timestamp
-    now_iso = datetime.datetime.utcnow().isoformat()
-    conn.execute("UPDATE users SET last_active = ? WHERE id = ?", (now_iso, user["id"]))
-    conn.commit()
-    conn.close()
+        # If DB stored a plain text password, automatically upgrade it to a bcrypt hash
+        if user["password_hash"] == payload.password:
+            new_hash = hash_password(payload.password)
+            conn.execute("UPDATE users SET password_hash = ? WHERE id = ?", (new_hash, user["id"]))
+
+        # Update last_active timestamp
+        now_iso = datetime.datetime.utcnow().isoformat()
+        conn.execute("UPDATE users SET last_active = ? WHERE id = ?", (now_iso, user["id"]))
+        conn.commit()
 
     token = create_access_token({"sub": user["id"], "email": user["email"], "role": user["role"]})
     
@@ -110,9 +111,8 @@ def get_me(current_user: dict = Depends(get_current_user)):
     """
     Get current logged-in user profile from DB.
     """
-    conn = get_db_connection()
-    user = conn.execute("SELECT * FROM users WHERE id = ?", (current_user["id"],)).fetchone()
-    conn.close()
+    with get_db_connection() as conn:
+        user = conn.execute("SELECT * FROM users WHERE id = ?", (current_user["id"],)).fetchone()
     
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -129,11 +129,10 @@ def update_preferences(payload: UpdatePreferencesRequest, current_user: dict = D
     """
     Update user preferences.
     """
-    conn = get_db_connection()
-    prefs_str = json.dumps(payload.prefs)
-    conn.execute("UPDATE users SET prefs = ? WHERE id = ?", (prefs_str, current_user["id"]))
-    conn.commit()
-    conn.close()
+    with get_db_connection() as conn:
+        prefs_str = json.dumps(payload.prefs)
+        conn.execute("UPDATE users SET prefs = ? WHERE id = ?", (prefs_str, current_user["id"]))
+        conn.commit()
 
     return {"success": True, "message": "Preferences updated successfully"}
 
@@ -145,17 +144,16 @@ def update_profile(payload: UpdateProfileRequest, current_user: dict = Depends(g
     """
     Update user profile info (e.g. name).
     """
-    conn = get_db_connection()
-    conn.execute("UPDATE users SET name = ? WHERE id = ?", (payload.name, current_user["id"]))
-    conn.commit()
-    conn.close()
+    with get_db_connection() as conn:
+        conn.execute("UPDATE users SET name = ? WHERE id = ?", (payload.name, current_user["id"]))
+        conn.commit()
 
     return {"success": True, "message": "Profile updated successfully"}
 
 @router.post("/send-otp")
 def send_otp(payload: SendOTPRequest, background_tasks: BackgroundTasks):
     """
-    Generate an OTP, store it in SQLite, and email it to the user.
+    Generate an OTP, store it in DB, and email it to the user.
     """
     email = payload.email.lower()
     name = payload.name
@@ -164,13 +162,12 @@ def send_otp(payload: SendOTPRequest, background_tasks: BackgroundTasks):
     doc_id = str(uuid.uuid4())
     now_iso = datetime.datetime.utcnow().isoformat()
 
-    conn = get_db_connection()
-    conn.execute("""
-        INSERT INTO otp_verifications (id, email, otp, expires_at, is_used, created_at)
-        VALUES (?, ?, ?, ?, 0, ?)
-    """, (doc_id, email, otp, expires_at, now_iso))
-    conn.commit()
-    conn.close()
+    with get_db_connection() as conn:
+        conn.execute("""
+            INSERT INTO otp_verifications (id, email, otp, expires_at, is_used, created_at)
+            VALUES (?, ?, ?, ?, 0, ?)
+        """, (doc_id, email, otp, expires_at, now_iso))
+        conn.commit()
 
     # Email notification
     subject = f"Your Login Code: {otp}"
@@ -187,35 +184,32 @@ def send_otp(payload: SendOTPRequest, background_tasks: BackgroundTasks):
 @router.post("/verify-otp")
 def verify_otp(payload: VerifyOTPRequest):
     """
-    Verify the provided OTP from SQLite.
+    Verify the provided OTP from DB.
     """
     email = payload.email.lower()
     otp = payload.otp
 
-    conn = get_db_connection()
-    otp_record = conn.execute("""
-        SELECT * FROM otp_verifications 
-        WHERE email = ? AND otp = ? AND is_used = 0 
-        ORDER BY created_at DESC LIMIT 1
-    """, (email, otp)).fetchone()
+    with get_db_connection() as conn:
+        otp_record = conn.execute("""
+            SELECT * FROM otp_verifications 
+            WHERE email = ? AND otp = ? AND is_used = 0 
+            ORDER BY created_at DESC LIMIT 1
+        """, (email, otp)).fetchone()
 
-    if not otp_record:
-        conn.close()
-        raise HTTPException(status_code=400, detail="Invalid verification code")
+        if not otp_record:
+            raise HTTPException(status_code=400, detail="Invalid verification code")
 
-    # Expiry Check
-    expires_at = datetime.datetime.fromisoformat(otp_record["expires_at"])
-    if datetime.datetime.utcnow() > expires_at:
-        conn.close()
-        raise HTTPException(status_code=400, detail="Verification code has expired")
+        # Expiry Check
+        expires_at = datetime.datetime.fromisoformat(otp_record["expires_at"])
+        if datetime.datetime.utcnow() > expires_at:
+            raise HTTPException(status_code=400, detail="Verification code has expired")
 
-    # Mark as used
-    conn.execute("UPDATE otp_verifications SET is_used = 1 WHERE id = ?", (otp_record["id"],))
-    
-    # Check if user exists
-    user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
-    conn.commit()
-    conn.close()
+        # Mark as used
+        conn.execute("UPDATE otp_verifications SET is_used = 1 WHERE id = ?", (otp_record["id"],))
+        
+        # Check if user exists
+        user = conn.execute("SELECT * FROM users WHERE email = ?", (email,)).fetchone()
+        conn.commit()
 
     return {
         "success": True,

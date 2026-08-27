@@ -41,6 +41,30 @@ class HybridRow(dict):
         return self._columns
 
 
+def fix_sql_placeholders(sql: str) -> str:
+    """
+    Replaces unquoted '?' parameter placeholders with '%s' for PostgreSQL/psycopg2.
+    Ignores '?' inside single-quoted or double-quoted string literals.
+    """
+    if '?' not in sql:
+        return sql
+    
+    parts = []
+    in_single_quote = False
+    in_double_quote = False
+    for char in sql:
+        if char == "'" and not in_double_quote:
+            in_single_quote = not in_single_quote
+            parts.append(char)
+        elif char == '"' and not in_single_quote:
+            in_double_quote = not in_double_quote
+            parts.append(char)
+        elif char == '?' and not in_single_quote and not in_double_quote:
+            parts.append('%s')
+        else:
+            parts.append(char)
+    return "".join(parts)
+
 # ──────────────────────────────────────────────────────────────
 # PostgreSQL wrappers
 # Converts SQLite-style ? placeholders → %s on the fly so that
@@ -52,12 +76,8 @@ class PGCursorWrapper:
     def __init__(self, cursor):
         self._cur = cursor
 
-    @staticmethod
-    def _fix(sql: str) -> str:
-        return sql.replace("?", "%s")
-
     def execute(self, sql: str, params=()):
-        self._cur.execute(self._fix(sql), params or ())
+        self._cur.execute(fix_sql_placeholders(sql), params or ())
         return self
 
     def fetchone(self):
@@ -88,13 +108,9 @@ class PGConnectionWrapper:
     def __init__(self, conn):
         self._conn = conn
 
-    @staticmethod
-    def _fix(sql: str) -> str:
-        return sql.replace("?", "%s")
-
     def execute(self, sql: str, params=()):
         cur = self._conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-        cur.execute(self._fix(sql), params or ())
+        cur.execute(fix_sql_placeholders(sql), params or ())
         return PGCursorWrapper(cur)
 
     def cursor(self):
@@ -109,6 +125,17 @@ class PGConnectionWrapper:
 
     def close(self):
         return self._conn.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            try:
+                self.rollback()
+            except Exception:
+                pass
+        self.close()
 
 
 # ──────────────────────────────────────────────────────────────
@@ -162,6 +189,17 @@ class SQLiteConnectionWrapper:
 
     def close(self):
         return self._conn.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if exc_type is not None:
+            try:
+                self.rollback()
+            except Exception:
+                pass
+        self.close()
 
 
 # ──────────────────────────────────────────────────────────────
