@@ -4,16 +4,20 @@ import json
 
 # ──────────────────────────────────────────────────────────────
 # Auto-detect database backend from DATABASE_URL env variable.
-# If DATABASE_URL starts with "postgresql://" or "postgres://"
-# the app uses PostgreSQL (psycopg2).
-# Otherwise it falls back to SQLite — useful for local testing.
+# Uses PostgreSQL (psycopg2) if DATABASE_URL starts with
+# "postgresql://" or "postgres://", otherwise falls back to SQLite.
 # ──────────────────────────────────────────────────────────────
-DATABASE_URL = os.getenv("DATABASE_URL", "")
-USE_POSTGRES = DATABASE_URL.startswith(("postgresql://", "postgres://"))
 
-if USE_POSTGRES:
+def is_using_postgres() -> bool:
+    db_url = os.getenv("DATABASE_URL", "")
+    return db_url.startswith(("postgresql://", "postgres://")) and "your_" not in db_url
+
+try:
     import psycopg2
     import psycopg2.extras
+    HAS_PSYCOPG2 = True
+except ImportError:
+    HAS_PSYCOPG2 = False
 
 # ──────────────────────────────────────────────────────────────
 # HybridRow — supports both dict-key AND integer-index access.
@@ -173,21 +177,15 @@ def get_db_connection():
     """
     Return a normalised database connection wrapper.
 
-    PostgreSQL — when DATABASE_URL is set to a postgresql:// URL.
+    PostgreSQL — when DATABASE_URL is set to a postgresql:// or postgres:// URL.
     SQLite     — fallback for local testing / development.
-
-    Both wrappers expose the same interface:
-        conn.execute(sql, params)  ->  cursor_wrapper
-        conn.cursor()              ->  cursor_wrapper
-        conn.commit() / conn.rollback() / conn.close()
-
-    Cursor wrappers expose:
-        cursor.execute(sql, params)
-        cursor.fetchone()   ->  HybridRow | None
-        cursor.fetchall()   ->  list[HybridRow]
     """
-    if USE_POSTGRES:
-        conn = psycopg2.connect(DATABASE_URL)
+    db_url = os.getenv("DATABASE_URL", "")
+    use_pg = is_using_postgres() and HAS_PSYCOPG2
+
+    if use_pg:
+        # PostgreSQL connection
+        conn = psycopg2.connect(db_url)
         return PGConnectionWrapper(conn)
     else:
         conn = sqlite3.connect(DB_PATH)
@@ -202,9 +200,10 @@ def init_db():
     Uses the appropriate DDL for PostgreSQL or SQLite.
     """
     conn = get_db_connection()
+    use_pg = is_using_postgres()
 
     # alert_subscriptions uses different auto-increment syntax per DB
-    alert_id_col = "id SERIAL PRIMARY KEY" if USE_POSTGRES else "id INTEGER PRIMARY KEY AUTOINCREMENT"
+    alert_id_col = "id SERIAL PRIMARY KEY" if use_pg else "id INTEGER PRIMARY KEY AUTOINCREMENT"
 
     # 1. Users
     conn.execute("""
@@ -503,7 +502,7 @@ def init_db():
     conn.commit()
     conn.close()
 
-    db_label = "PostgreSQL" if USE_POSTGRES else f"SQLite at {DB_PATH}"
+    db_label = "PostgreSQL" if use_pg else f"SQLite at {DB_PATH}"
     print(f"✅ Database initialized: {db_label}")
 
 
