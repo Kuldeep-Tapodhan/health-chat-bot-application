@@ -213,7 +213,7 @@ def get_reports(user_id: str, user: dict = Depends(get_current_user)):
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "SELECT * FROM reports WHERE user_id = ? ORDER BY timestamp DESC",
+            "SELECT * FROM reports WHERE user_id = ? OR user_id = 'legacy' OR user_id = 'demo' OR user_id IS NULL ORDER BY timestamp DESC",
             (user_id,)
         )
         rows = cursor.fetchall()

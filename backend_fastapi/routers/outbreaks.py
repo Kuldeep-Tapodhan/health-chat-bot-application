@@ -68,19 +68,46 @@ def get_outbreaks(
             where_sql = f" WHERE 1=1 {state_filter_sql} {disease_filter_sql} {date_filter_sql}"
             params = state_params + disease_params + date_params
 
-            cursor.execute(f"SELECT COUNT(*) as count FROM canonical_outbreaks {where_sql} AND status = 'ACTIVE'", params)
-            active_count = cursor.fetchone()["count"]
+            cursor.execute(f"SELECT COUNT(*) as count FROM canonical_outbreaks {where_sql} AND (status IS NULL OR UPPER(status) IN ('ACTIVE', 'REPORTED', 'ONGOING', 'CONFIRMED', 'OPEN'))", params)
+            res = cursor.fetchone()
+            active_count = res["count"] if res else 0
 
             cursor.execute(f"SELECT SUM(total_confirmed_cases) as cases, SUM(total_deaths) as deaths FROM canonical_outbreaks {where_sql}", params)
             totals = cursor.fetchone()
-            total_cases = totals["cases"] or 0
-            total_deaths = totals["deaths"] or 0
+            total_cases = (totals["cases"] if totals and totals["cases"] else 0)
+            total_deaths = (totals["deaths"] if totals and totals["deaths"] else 0)
 
             cursor.execute(f"SELECT COUNT(DISTINCT state) as count FROM canonical_outbreaks {where_sql}", params)
-            states_affected = cursor.fetchone()["count"]
+            res = cursor.fetchone()
+            states_affected = res["count"] if res else 0
 
             cursor.execute(f"SELECT COUNT(DISTINCT district) as count FROM canonical_outbreaks {where_sql}", params)
-            districts_affected = cursor.fetchone()["count"]
+            res = cursor.fetchone()
+            districts_affected = res["count"] if res else 0
+
+            # Direct fallback to 'outbreaks' table if canonical_outbreaks has no rows
+            if active_count == 0 and total_cases == 0:
+                leg_state_sql = " AND state_ut = ?" if state else ""
+                leg_disease_sql = " AND disease_illness = ?" if disease else ""
+                leg_where = f" WHERE 1=1 {leg_state_sql} {leg_disease_sql}"
+                leg_params = (state_params if state else []) + (disease_params if disease else [])
+
+                cursor.execute(f"SELECT COUNT(*) as count FROM outbreaks {leg_where} AND (current_status IS NULL OR UPPER(current_status) IN ('ACTIVE', 'REPORTED', 'ONGOING', 'CONFIRMED', 'OPEN'))", leg_params)
+                res = cursor.fetchone()
+                active_count = res["count"] if res else 0
+
+                cursor.execute(f"SELECT SUM(cases) as cases, SUM(deaths) as deaths FROM outbreaks {leg_where}", leg_params)
+                totals = cursor.fetchone()
+                total_cases = (totals["cases"] if totals and totals["cases"] else 0)
+                total_deaths = (totals["deaths"] if totals and totals["deaths"] else 0)
+
+                cursor.execute(f"SELECT COUNT(DISTINCT state_ut) as count FROM outbreaks {leg_where}", leg_params)
+                res = cursor.fetchone()
+                states_affected = res["count"] if res else 0
+
+                cursor.execute(f"SELECT COUNT(DISTINCT district) as count FROM outbreaks {leg_where}", leg_params)
+                res = cursor.fetchone()
+                districts_affected = res["count"] if res else 0
 
             return {
                 "active_outbreaks": active_count,
@@ -100,6 +127,20 @@ def get_outbreaks(
             """
             cursor.execute(query, state_params + disease_params + date_params)
             data = [dict(row) for row in cursor.fetchall()]
+
+            if not data:
+                leg_state_sql = " AND state_ut = ?" if state else ""
+                leg_disease_sql = " AND disease_illness = ?" if disease else ""
+                leg_query = f"""
+                    SELECT state_ut as name, COUNT(*) as count, SUM(cases) as cases, SUM(deaths) as deaths
+                    FROM outbreaks
+                    WHERE 1=1 {leg_state_sql} {leg_disease_sql}
+                    GROUP BY state_ut
+                    ORDER BY cases DESC
+                """
+                cursor.execute(leg_query, (state_params if state else []) + (disease_params if disease else []))
+                data = [dict(row) for row in cursor.fetchall()]
+
             return data
 
         elif data_type == "districts":
@@ -113,6 +154,21 @@ def get_outbreaks(
             """
             cursor.execute(query, state_params + disease_params + date_params)
             data = [dict(row) for row in cursor.fetchall()]
+
+            if not data:
+                leg_state_sql = " AND state_ut = ?" if state else ""
+                leg_disease_sql = " AND disease_illness = ?" if disease else ""
+                leg_query = f"""
+                    SELECT district as name, state_ut as state, COUNT(*) as count, SUM(cases) as cases, SUM(deaths) as deaths
+                    FROM outbreaks
+                    WHERE 1=1 {leg_state_sql} {leg_disease_sql}
+                    GROUP BY district, state_ut
+                    ORDER BY cases DESC
+                    LIMIT 15
+                """
+                cursor.execute(leg_query, (state_params if state else []) + (disease_params if disease else []))
+                data = [dict(row) for row in cursor.fetchall()]
+
             return data
 
         elif data_type == "diseases":
@@ -125,6 +181,19 @@ def get_outbreaks(
             """
             cursor.execute(query, state_params + date_params)
             data = [dict(row) for row in cursor.fetchall()]
+
+            if not data:
+                leg_state_sql = " AND state_ut = ?" if state else ""
+                leg_query = f"""
+                    SELECT disease_illness as name, COUNT(*) as count, SUM(cases) as cases, SUM(deaths) as deaths
+                    FROM outbreaks
+                    WHERE 1=1 {leg_state_sql}
+                    GROUP BY disease_illness
+                    ORDER BY cases DESC
+                """
+                cursor.execute(leg_query, state_params if state else [])
+                data = [dict(row) for row in cursor.fetchall()]
+
             return data
 
         elif data_type == "deaths":
@@ -159,6 +228,19 @@ def get_outbreaks(
             """
             cursor.execute(query, date_params + disease_params)
             data = [dict(row) for row in cursor.fetchall()]
+
+            if not data:
+                leg_disease_sql = " AND disease_illness = ?" if disease else ""
+                leg_query = f"""
+                    SELECT state_ut as name, COUNT(*) as count, SUM(cases) as cases, SUM(deaths) as deaths
+                    FROM outbreaks
+                    WHERE 1=1 {leg_disease_sql}
+                    GROUP BY state_ut
+                    ORDER BY cases DESC
+                """
+                cursor.execute(leg_query, disease_params if disease else [])
+                data = [dict(row) for row in cursor.fetchall()]
+
             return data
 
         elif data_type in ["table", "canonicals"]:
@@ -169,19 +251,41 @@ def get_outbreaks(
             params = state_params + disease_params + date_params + search_params
 
             cursor.execute(f"SELECT COUNT(*) as count {base_query}", params)
-            total = cursor.fetchone()["count"]
+            tot_res = cursor.fetchone()
+            total = tot_res["count"] if tot_res else 0
 
-            query = f"""
-                SELECT canonical_id, primary_disease as disease_illness, state as state_ut, district, 
-                       total_confirmed_cases as cases, total_deaths as deaths, 
-                       outbreak_start_date as date_start, first_reported_date as date_reporting, 
-                       status as current_status, severity, confidence_level as verification_status
-                {base_query}
-                ORDER BY canonical_id DESC
-                LIMIT ? OFFSET ?
-            """
-            cursor.execute(query, params + [pageSize, offset])
-            raw_data = [dict(row) for row in cursor.fetchall()]
+            if total == 0:
+                leg_state_sql = " AND state_ut = ?" if state else ""
+                leg_disease_sql = " AND disease_illness = ?" if disease else ""
+                leg_search_sql = " AND (state_ut LIKE ? OR district LIKE ? OR disease_illness LIKE ?)" if search else ""
+                leg_params = (state_params if state else []) + (disease_params if disease else []) + (search_params[:3] if search else [])
+
+                leg_where = f" WHERE 1=1 {leg_state_sql} {leg_disease_sql} {leg_search_sql}"
+                cursor.execute(f"SELECT COUNT(*) as count FROM outbreaks {leg_where}", leg_params)
+                tot_res = cursor.fetchone()
+                total = tot_res["count"] if tot_res else 0
+
+                leg_query = f"""
+                    SELECT unique_id as canonical_id, disease_illness, state_ut, district, 
+                           cases, deaths, date_start, date_reporting, current_status, 'MODERATE' as severity, 'OFFICIAL' as verification_status
+                    FROM outbreaks {leg_where}
+                    ORDER BY unique_id DESC
+                    LIMIT ? OFFSET ?
+                """
+                cursor.execute(leg_query, leg_params + [pageSize, offset])
+                raw_data = [dict(row) for row in cursor.fetchall()]
+            else:
+                query = f"""
+                    SELECT canonical_id, primary_disease as disease_illness, state as state_ut, district, 
+                           total_confirmed_cases as cases, total_deaths as deaths, 
+                           outbreak_start_date as date_start, first_reported_date as date_reporting, 
+                           status as current_status, severity, confidence_level as verification_status
+                    {base_query}
+                    ORDER BY canonical_id DESC
+                    LIMIT ? OFFSET ?
+                """
+                cursor.execute(query, params + [pageSize, offset])
+                raw_data = [dict(row) for row in cursor.fetchall()]
 
             # Attach primary source information for each canonical outbreak
             data = []
