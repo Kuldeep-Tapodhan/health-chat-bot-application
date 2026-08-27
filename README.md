@@ -293,9 +293,18 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=optional_google_maps_api_key
 
 ## 🚀 Build & Deployment
 
-### Production Docker Build
+### Production Cloud Deployment (Vercel + Render + Supabase)
 
-To create optimized production images:
+For deploying directly from Git source code without container registries:
+
+- 📖 **[Complete Production Deployment Guide](documentation/DEPLOYMENT_GUIDE.md)**
+- **Frontend**: Next.js 16 on **Vercel** (`health-chatbot-app`)
+- **Backend**: FastAPI Python on **Render** (`backend_fastapi`)
+- **Database & Storage**: PostgreSQL & Buckets on **Supabase**
+
+### Production Local Docker Build
+
+To run production containers locally:
 
 ```bash
 # Build production images
