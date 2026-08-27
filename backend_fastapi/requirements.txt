@@ -9,6 +9,7 @@ regex
 # =======================
 fastapi
 uvicorn
+gunicorn
 python-dotenv
 python-multipart
 email-validator
