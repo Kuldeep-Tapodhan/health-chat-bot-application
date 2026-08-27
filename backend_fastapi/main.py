@@ -9,7 +9,7 @@ import uuid
 import datetime
 import json
 from services.database import get_db_connection
-from services.auth_service import hash_password
+from services.auth_service import hash_password, verify_password
 
 app = FastAPI(title="Data-Aware RAG System API")
 
