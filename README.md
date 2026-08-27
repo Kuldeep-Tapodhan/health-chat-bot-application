@@ -11,9 +11,11 @@
 [![TailwindCSS](https://img.shields.io/badge/Tailwind_CSS-v4.0-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
 [![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED?style=for-the-badge&logo=docker&logoColor=white)](https://www.docker.com/)
 [![Google Gemini](https://img.shields.io/badge/Google_Gemini-AI_RAG-8E75B2?style=for-the-badge&logo=google&logoColor=white)](https://ai.google.dev/)
+[![Live App](https://img.shields.io/badge/Live_App-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://health-chat-bot-application.vercel.app)
+[![Live API](https://img.shields.io/badge/Live_API-Render-46E3B7?style=for-the-badge&logo=render&logoColor=white)](https://health-chat-bot-application.onrender.com)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 
-[Features](#-key-highlights) • [Architecture](#%EF%B8%8F-architecture) • [API Routes](#-routing--api-structure) • [Installation](#%EF%B8%8F-local-development) • [Deployment](#-build--deployment)
+[🌐 Live Web App](https://health-chat-bot-application.vercel.app) • [⚡ Live API Endpoint](https://health-chat-bot-application.onrender.com) • [📖 Interactive API Docs](https://health-chat-bot-application.onrender.com/docs) • [Features](#-key-highlights) • [Architecture](#%EF%B8%8F-architecture) • [API Routes](#-routing--api-structure) • [Installation](#%EF%B8%8F-local-development) • [Deployment](#-build--deployment)
 
 </div>
 
@@ -21,6 +23,7 @@
 
 ## 📑 Table of Contents
 - [📌 Overview](#-overview)
+- [🌐 Live Deployments](#-live-production-deployments)
 - [✨ Key Highlights](#-key-highlights)
 - [🛠️ Technologies Used](#%EF%B8%8F-technologies-used)
 - [🏗️ Architecture](#%EF%B8%8F-architecture)
@@ -42,6 +45,18 @@
 **Health AI Assistant** is a production-ready, full-stack medical chatbot and epidemiological surveillance platform designed to democratize medical information access and disease tracking. Powered by **FastAPI**, **Next.js 16**, and **Google Gemini RAG**, the application enables users to converse with an AI medical assistant, analyze complex clinical laboratory reports via OCR, find nearby healthcare facilities, and monitor real-time government outbreak feeds.
 
 The application features a modern responsive interface with seamless page transitions, customizable themes (Dark/Light Mode), multi-language internationalization, and micro-animations for real-time AI reasoning state feedback.
+
+---
+
+## 🌐 Live Production Deployments
+
+The application is deployed live in production across high-performance cloud infrastructure:
+
+- 🚀 **Live Web Application (Vercel)**: [https://health-chat-bot-application.vercel.app](https://health-chat-bot-application.vercel.app)
+- ⚡ **Live FastAPI Backend API (Render)**: [https://health-chat-bot-application.onrender.com](https://health-chat-bot-application.onrender.com)
+- 📖 **Interactive Swagger API Documentation**: [https://health-chat-bot-application.onrender.com/docs](https://health-chat-bot-application.onrender.com/docs)
+- 🗄️ **Managed Database (Supabase PostgreSQL)**: High-availability PostgreSQL database connected via IPv4 Connection Pooler.
+- 📦 **Object & Report Storage (Supabase S3)**: Encrypted S3-compatible cloud storage bucket for clinical laboratory report documents.
 
 ---
 
@@ -67,9 +82,10 @@ The application features a modern responsive interface with seamless page transi
 | **TailwindCSS** | `4.0` | Utility-First Styling System |
 | **FastAPI** | `0.109` | Asynchronous Python Backend API |
 | **Python** | `3.13` | Backend Core Runtime Environment |
-| **Google Gemini API** | `gemini-1.5-flash` | Generative AI & Clinical RAG Engine |
+| **Google Gemini API** | `gemini-1.5-flash` / `gemini-2.5-flash` | Generative AI & Clinical RAG Engine |
 | **LangChain** | `0.1` | RAG Prompt Orchestration |
-| **SQLite / SQLAlchemy** | `3.x` | Relational Persistence Database |
+| **Supabase PostgreSQL & SQLite** | `latest` | High-Availability Managed Relational Database |
+| **Supabase S3 Storage** | `latest` | Cloud Storage Bucket for Medical Reports |
 | **Tesseract.js & PyPDF** | `5.x` | OCR Document Processing |
 | **Docker & Docker Compose** | `latest` | Multi-Container Containerization |
 | **Lucide React** | `0.300+` | Modern UI Vector Icon System |
