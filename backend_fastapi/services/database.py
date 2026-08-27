@@ -184,9 +184,16 @@ def get_db_connection():
     use_pg = is_using_postgres() and HAS_PSYCOPG2
 
     if use_pg:
-        # PostgreSQL connection
-        conn = psycopg2.connect(db_url)
-        return PGConnectionWrapper(conn)
+        try:
+            conn = psycopg2.connect(db_url)
+            return PGConnectionWrapper(conn)
+        except Exception as pg_err:
+            print(f"⚠️ PostgreSQL connection warning: {pg_err}")
+            print("⚠️ Falling back to SQLite database for this request...")
+            conn = sqlite3.connect(DB_PATH)
+            conn.row_factory = sqlite3.Row
+            conn.execute("PRAGMA journal_mode=WAL;")
+            return SQLiteConnectionWrapper(conn)
     else:
         conn = sqlite3.connect(DB_PATH)
         conn.row_factory = sqlite3.Row
