@@ -13,17 +13,19 @@ from services.auth_service import hash_password
 
 app = FastAPI(title="Data-Aware RAG System API")
 
-# CORS Configuration — allow all origins permissively
+# CORS Configuration — strict origin validation in production
 cors_origins_str = os.getenv("CORS_ORIGINS", "*")
 if cors_origins_str.strip() == "*":
     cors_origins = ["*"]
+    allow_creds = False
 else:
     cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+    allow_creds = True
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
-    allow_credentials=False,
+    allow_credentials=allow_creds,
     allow_methods=["*"],
     allow_headers=["*"],
 )
