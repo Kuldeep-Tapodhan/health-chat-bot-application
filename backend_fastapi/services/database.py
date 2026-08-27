@@ -211,7 +211,12 @@ def init_db():
     Create all tables if they do not yet exist.
     Uses the appropriate DDL for PostgreSQL or SQLite.
     """
-    conn = get_db_connection()
+    try:
+        conn = get_db_connection()
+    except Exception as e:
+        print(f"⚠️ Connection initialization notice: {e}")
+        return
+
     use_pg = is_using_postgres()
 
     # alert_subscriptions uses different auto-increment syntax per DB
