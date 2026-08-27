@@ -13,21 +13,23 @@ from services.auth_service import hash_password
 
 app = FastAPI(title="Data-Aware RAG System API")
 
-# CORS Configuration — strict origin validation in production
+# CORS Configuration — robust Vercel & localhost origin validation
 cors_origins_str = os.getenv("CORS_ORIGINS", "*")
 if cors_origins_str.strip() == "*":
     cors_origins = ["*"]
     allow_creds = False
 else:
-    cors_origins = [origin.strip() for origin in cors_origins_str.split(",") if origin.strip()]
+    cors_origins = [o.strip().rstrip('/') for o in cors_origins_str.split(",") if o.strip()]
     allow_creds = True
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=allow_creds,
     allow_methods=["*"],
     allow_headers=["*"],
+    max_age=3600,
 )
 
 from routers import ingest, chat, speech, translate_v2 as translate, reports, admin, notifications, hospitals, auth, outbreaks, alerts, sources, pending_reviews
