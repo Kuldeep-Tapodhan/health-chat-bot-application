@@ -185,11 +185,16 @@ def get_db_connection():
 
     if use_pg:
         try:
-            conn = psycopg2.connect(db_url)
+            connect_kwargs = {}
+            if "supabase" in db_url and "sslmode" not in db_url:
+                connect_kwargs["sslmode"] = "require"
+            conn = psycopg2.connect(db_url, **connect_kwargs)
             return PGConnectionWrapper(conn)
         except Exception as pg_err:
-            print(f"⚠️ PostgreSQL connection warning: {pg_err}")
-            print("⚠️ Falling back to SQLite database for this request...")
+            print(f"❌ PostgreSQL connection failed to [{db_url[:35]}...]: {pg_err}")
+            if os.getenv("RENDER") or os.getenv("PRODUCTION"):
+                raise RuntimeError(f"PostgreSQL connection failed: {pg_err}")
+            print("⚠️ Falling back to SQLite database for local testing...")
             conn = sqlite3.connect(DB_PATH)
             conn.row_factory = sqlite3.Row
             conn.execute("PRAGMA journal_mode=WAL;")
