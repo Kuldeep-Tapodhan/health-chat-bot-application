@@ -1,7 +1,7 @@
 # Regional Health Assistance Chatbot - Process Diagram
 
 > **Research Paper Documentation**  
-> Complete Website Process Flow and System Architecture
+> Complete Website Process Flow and System Architecture Design
 
 ---
 

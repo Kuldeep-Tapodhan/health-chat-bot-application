@@ -1,6 +1,6 @@
 # Cloud Production Deployment Architecture
 
-This document describes the cloud deployment configuration and instructions for the Health AI Assistant application using **Vercel**, **Render**, and **Supabase**.
+This document describes the cloud deployment configuration and instructions for the Health AI Assistant application using **Vercel**, **Render**, and **Supabase**.for the db
 
 ---
 
